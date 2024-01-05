@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "Artermis-Programme",
+			"path": "../PlatformIO/Projects/Artermis-Programme"
+		},
+		{
+			"name": "Artermis-Programme",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
