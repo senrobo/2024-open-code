@@ -54,18 +54,19 @@ float LDRBearings [LDRPINCOUNT]{
 }; // assuming placement of ldrs is constant
 
 float LDRThresholds [LDRPINCOUNT]{
-931 , 934 , 920 , 919 , 921 ,   1000, 921 , 915 ,   1000 , 927 , 926 , 911 , 923 , 923 , 919 , 933 , 923 , 929 , 
-935 , 931 , 925 , 929 , 933 , 932 , 944 , 942 , 944 , 938 , 935 , 935 , 926 , 925 , 935 , 943 , 920 , 925 
+1000.00 , 873.50 , 849.00 , 862.00 , 860.00 , 850.00 , 848.00 , 857.50 , 859.00 , 849.00 , 847.00 , 856.50 , 861.50 , 860.50 , 
+68.00 , 865.00 , 867.00 , 879.00 , 872.50 , 863.00 , 861.50 , 869.00 , 860.00 , 871.50 , 881.50 , 879.50 , 855.50 , 876.50 , 866.00 , 
+859.50 , 868.50 , 951.00 , 867.00 , 873.00 , 865.50 , 856.50 
 }; 
 //26,27,29,13
 double maxRecordedValue[LDRPINCOUNT]{
-941 , 947 , 932 , 931 , 933 ,  11 , 932 , 927 ,   8 , 932 , 934 , 923 , 934 , 935 , 930 , 942 , 933 , 937 , 941 , 942 , 
-938 , 940 , 944 , 944 , 952 , 951 , 952 , 946 , 943 , 945 , 939 , 937 , 950 , 957 , 933 , 936 
+881 , 882 , 863 , 870 , 874 , 864 , 857 , 871 , 868 , 862 , 861 , 873 , 866 , 871 , 879 , 872 , 870 , 890 , 881 , 873 , 
+869 , 881 , 869 , 883 , 891 , 891 , 864 , 887 , 876 , 869 , 877 , 952 , 874 , 880 , 876 , 866 
 };
 
 double minRecordedValue[LDRPINCOUNT]{
-918 , 916 , 903 , 903 , 905 ,   7 , 906 , 897 ,   6 , 902 , 915 , 893 , 907 , 907 , 903 , 920 , 908 , 918 , 
-926 , 915 , 906 , 913 , 917 , 915 , 933 , 930 , 933 , 927 , 923 , 921 , 908 , 909 , 914 , 924 , 901 , 909 
+859 , 865 , 835 , 854 , 846 , 836 , 839 , 844 , 850 , 836 , 833 , 840 , 857 , 850 , 857 , 858 , 864 , 868 , 864 , 853 , 854 , 
+857 , 851 , 860 , 872 , 868 , 847 , 866 , 856 , 850 , 860 , 950 , 860 , 866 , 855 , 847 
 };
 
 double calculatedthesholdValue[LDRPINCOUNT]{
@@ -94,14 +95,14 @@ void receiveL1TxData(const byte *buf, size_t size){
 
 
 struct linedata{
-  bool onLine = false;
+  int onLine = 1;
   float angleBisector = 0;
   float depthinLine = 0;
   int linetrackldr1 = 0;
   int linetrackldr2 = 0;
   int ballinCatchment = 1;
-  int SerialLDRID = 0;
-  int SerialLDRvalue = 0;
+  // int SerialLDRID = 0;
+  // int SerialLDRvalue = 0;
 };
 linedata SAMDlinedata;
 
@@ -183,7 +184,7 @@ void findLine(){
 
   int final_ldrPinout1 = 0;
   int final_ldrPinout2 = 0;
-  SAMDlinedata.onLine = 0;
+  SAMDlinedata.onLine = 1;
   
 
   for (int pinNumber = 0 ; pinNumber < LDRPINCOUNT ; pinNumber++){
@@ -208,11 +209,11 @@ void findLine(){
     }
     
     if (LDRValues[pinNumber] > LDRThresholds[pinNumber]){
-      SAMDlinedata.onLine = true;
+      SAMDlinedata.onLine = 2;
       first_ldrPinout = pinNumber;
       first_tmpldrangle = LDRBearings[pinNumber];
 
-      calculatedthesholdValue[i] = minRecordedValue[i] + (maxRecordedValue[i] - minRecordedValue[i]) * 0.6;
+      calculatedthesholdValue[i] = minRecordedValue[i] + (maxRecordedValue[i] - minRecordedValue[i]) * 0.5;
       if (LDRValues[i] > LDRThresholds[i]){
         second_ldrPinout = i;
         second_tmpldrangle = LDRBearings[i];
@@ -277,22 +278,15 @@ void setup() {
   pinMode(MuxInput3,INPUT);
 
   pinMode(Solenoid_Pin,OUTPUT);
-  // digitalWrite(S0, OUTPUT);
-  // digitalWrite(S1, OUTPUT);
-  // digitalWrite(S2, OUTPUT);
-  // digitalWrite(S3, OUTPUT);
-  // analogWrite(MuxInput1, INPUT);
-  // analogWrite(MuxInput2, INPUT);
-  // analogWrite(MuxInput3, INPUT);
   // Serial1.begin(9600);
   //autoTuneThreshold(10000, 0.7);
 }
 int counter = 0;
 int dontKillSamd21 = 1;
 void loop(){
-  counter > 35 ? counter = 0 : counter = counter;
-  SAMDlinedata.SerialLDRvalue = highValues[counter];
-  SAMDlinedata.SerialLDRID = counter;
+  // counter > 35 ? counter = 0 : counter = counter;
+  // SAMDlinedata.linetrackldr1 = highValues[counter];
+  // SAMDlinedata.linetrackldr2 = counter;
 
   
   L1Serial.update();
@@ -304,6 +298,7 @@ void loop(){
     digitalWrite(Solenoid_Pin,LOW);
   }
 
+  SAMDlinedata.onLine = 1;
   findLine();
   
 
@@ -313,14 +308,14 @@ void loop(){
   //autoTuneThreshold(5000, 0.7);
   Serial.print(SAMDlinedata.ballinCatchment);
   Serial.print(" , ");
-  Serial.println(SAMDlinedata.depthinLine);
+  Serial.println(SAMDlinedata.onLine);
 
   //Serial.print("hei");
   
-
   byte buf[sizeof(l1TxPayload)];
   memcpy(buf,&SAMDlinedata, sizeof(SAMDlinedata));
   L1Serial.send(buf,sizeof(buf));
+  //Serial1.write(2);
 
   counter++;
 }

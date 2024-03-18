@@ -19,8 +19,8 @@ struct L1TxData{
   int linetrackldr1;
   int linetrackldr2;
   int ballinCatchment;
-  int SerialLDRID = 0;
-  int SerialLDRvalue = 0;
+//   int SerialLDRID = 0;
+//   int SerialLDRvalue = 0;
 };
 
 struct L1TxPayload {
@@ -41,8 +41,8 @@ struct SensorValues {
     int linetrackldr2;
     int ballinCatchment;
     int lidardist[4];
-    int SerialLDRID = 0;
-    int SerialLDRvalue = 0;
+    // int SerialLDRID = 0;
+    // int SerialLDRvalue = 0;
 };
 
 struct L3sensorValues {

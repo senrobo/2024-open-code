@@ -5,6 +5,7 @@
 
 #define DEBUG_EVERYTHING
 //#define DEBUG_LIGHT_RING
+//#define DEBUG_THRESHOLD_VALUES
 
 //#define DEFENCE_BOT_CODE
     //print Serial
@@ -32,7 +33,7 @@
     #define DRIBBLER_LOWER_LIMIT 128
     #define DRIBBLER_UPPER_LIMIT 192
 
-    #define DEBUG_LIDAR
+    //#define DEBUG_LIDAR
 
 //#define LOCALISE_CODE
     #define LOCALISE_CODE_TARGET_BEARING 0 // do this

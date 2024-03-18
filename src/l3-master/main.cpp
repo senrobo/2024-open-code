@@ -10,6 +10,7 @@
 #include "movement.h"
 #include "sensorfusion.h"
 #include "shared.h"
+#include "config.h"
 
 //hello
 
@@ -37,6 +38,22 @@ int highValues[36] = {
     5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
     5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
     5.00, 5.00, 5.00, 5.00, 5.00, 5.00};
+
+double maxRecordedValue[36]{
+881 , 882 , 863 , 870 , 874 , 864 , 857 , 871 , 868 , 862 , 861 , 873 , 866 , 871 , 879 , 872 , 870 , 890 , 881 , 873 , 
+869 , 881 , 869 , 883 , 891 , 891 , 864 , 887 , 876 , 869 , 877 , 952 , 874 , 880 , 876 , 866 
+};
+
+double minRecordedValue[36]{
+859 , 865 , 835 , 854 , 846 , 836 , 839 , 844 , 850 , 836 , 833 , 840 , 857 , 850 , 857 , 858 , 864 , 868 , 864 , 853 , 854 , 
+857 , 851 , 860 , 872 , 868 , 847 , 866 , 856 , 850 , 860 , 950 , 860 , 866 , 855 , 847 
+};
+
+double calculatedthesholdValue[36]{
+  834, 833, 818, 822, 828, 821, 826, 820,   5, 821, 832, 822, 830, 832, 825, 841, 825, 832, 838, 834,
+  829, 841, 843, 840, 850, 846, 848, 843, 836, 840, 830, 831, 828, 844, 823, 827 
+};
+
 
 double frontMirrorMapping(double distance) {
     if (distance != 500) {
@@ -99,9 +116,8 @@ void receiveL1TxData(const byte *buf, size_t size){
   sensorValues.ballinCatchment = L1payload.l1TxData.ballinCatchment;
   sensorValues.linetrackldr1 = L1payload.l1TxData.linetrackldr1;
   sensorValues.linetrackldr2 = L1payload.l1TxData.linetrackldr2;
-  sensorValues.SerialLDRID = L1payload.l1TxData.SerialLDRID;
-  sensorValues.SerialLDRvalue = L1payload.l1TxData.SerialLDRvalue;
-  highValues[sensorValues.SerialLDRID] = sensorValues.SerialLDRvalue;
+  // sensorValues.SerialLDRID = L1payload.l1TxData.SerialLDRID;
+  // sensorValues.SerialLDRvalue = L1payload.l1TxData.SerialLDRvalue;
   return;
 }
 
@@ -219,6 +235,20 @@ double leftVariance = 2;
 double rightVariance = 2;
 
 void loop() {
+  #ifdef DEBUG_THRESHOLD_VALUES
+  highValues[sensorValues.linetrackldr2] = sensorValues.linetrackldr1;
+  for (int i = 0 ; i < 36; i++){
+    calculatedthesholdValue[i] = minRecordedValue[i] + (maxRecordedValue[i] - minRecordedValue[i]) * 0.5;
+    if (i == 35) {
+      Serial.print(calculatedthesholdValue[i]);
+      Serial.println(" ");
+    }
+    else {
+      Serial.print(calculatedthesholdValue[i]);
+      Serial.print(" , ");
+    }
+  }
+  #endif
   // SETUP PHASE
   analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
 
@@ -516,7 +546,7 @@ void loop() {
 
   //lightRing
   Serial.print("onLine: ");
-  printDouble(Serial, sensorValues.onLine, 1, 0);
+  printDouble(Serial, sensorValues.onLine, 2, 0);
   Serial.print(" | angleBisector: ");
   printDouble(Serial, sensorValues.angleBisector, 3, 0);
   Serial.print(" | depthinLine: ");
@@ -524,7 +554,9 @@ void loop() {
   Serial.print(" | firstLDR: ");
   printDouble(Serial, sensorValues.linetrackldr1, 3, 0);
   Serial.print(" | secondLDR: ");
-  printDouble(Serial, sensorValues.linetrackldr1, 3, 0);
+  printDouble(Serial, sensorValues.linetrackldr2, 3, 0);
+  Serial.print(" | catchment: ");
+  printDouble(Serial, sensorValues.ballinCatchment, 3, 0);
   //L3 Data
   Serial.print(" | bearing: ");
   printDouble(Serial, sensorValues.relativeBearing, 3, 1);
