@@ -441,12 +441,12 @@ void loop() {
 
 
   // action
-  if (sensorValues.onLine > 0){
+  if (sensorValues.onLine == 2){
     movement.setconstantDirection(Direction::constant{clipAngleto180degrees(180+sensorValues.angleBisector)});
     movement.setconstantVelocity(Velocity::constant{350});
-
   }
-  else if (avg_ballinCatchment(dt,10) >= 0){ //720
+  
+  else if (avg_ballinCatchment(dt,10) >= 700){ //720
   
     if (execution.kickComplete == 1){
       execution.setStrategy = 1;
@@ -489,7 +489,7 @@ void loop() {
       //execution.targetBearing = 0;
     }
   }
-  else if (avg_ballinCatchment(dt, 10) <= 680) {  // 720
+  else if (avg_ballinCatchment(dt, 10) <= 700) {  // 720
         if (execution.strategy == 1) {
             if (localizeWithOffensiveGoal().distance > 60) {
                 // analogWrite(DRIBBLER_PWM, 14);

@@ -3,12 +3,12 @@
 
 
 
-#define FL_PWM_PIN 8
-#define FL_IN1_PIN 7
-#define FL_IN2_PIN 9
-#define BL_PWM_PIN 11
-#define BL_IN1_PIN 10
-#define BL_IN2_PIN 12
+#define FL_PWM_PIN 11
+#define FL_IN1_PIN 10
+#define FL_IN2_PIN 12
+#define BL_PWM_PIN 8
+#define BL_IN1_PIN 7
+#define BL_IN2_PIN 9
 #define FR_PWM_PIN 2
 #define FR_IN1_PIN 1
 #define FR_IN2_PIN 3
@@ -153,8 +153,8 @@ void Movement::drive(Point robotPosition){
     digitalWriteFast(FR_IN2_PIN, FRSpeed > 0 ? HIGH: LOW);
 
 
-    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? HIGH : LOW);
-    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? HIGH : LOW);
 
     digitalWriteFast(BL_IN1_PIN, BLSpeed > 0 ? LOW : HIGH);
     digitalWriteFast(BL_IN2_PIN, BLSpeed > 0 ? HIGH : LOW);

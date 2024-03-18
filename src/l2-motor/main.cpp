@@ -1,3 +1,4 @@
+#include "SPI.h"
 #include "SparkFun_BNO08x_Arduino_Library.h"
 #include "PacketSerial.h"
 #include <Arduino.h>
@@ -111,7 +112,11 @@ void loop(){
   setReports();
   CameraTeensySerial.update();
   LidarTeensySerial.update();
-  Serial.print(sensorvalues.LidarDist[3]);
+  Serial.print(sensorvalues.relativeBearing);
+  Serial.print(", ");
+  Serial.print(sensorvalues.bluegoal_relativeposition.distance);
+  Serial.print(", ");
+  Serial.println(sensorvalues.yellowgoal_relativeposition.distance);
 
   //setReports();
   getBNOreading();
