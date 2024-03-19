@@ -1,12 +1,12 @@
-# open-code
+# Robocup Junior Soccer Open Code
 
-This repository contains the source code for the "open-code" project. The project is organized into different directories, each representing a specific module or component.
+
 
 ## Directory Structure
 
 ``` bash
 ├──  include
-│  ├── 󰂺 README
+│  ├── 󰂺 README 
 │  ├──  shared.h
 │  ├──  util.h
 │  └──  vector.h
