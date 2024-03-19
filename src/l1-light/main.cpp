@@ -167,13 +167,13 @@ double highValues[LDRPINCOUNT] = {
 void findLine() {
     getValues();
     // initialize essential variables
-    int first_tmpldrangle = 0;
+    // int first_tmpldrangle = 0;
     int first_ldrPinout = 0;
-    int second_tmpldrangle = 0;
+    // int second_tmpldrangle = 0;
     int second_ldrPinout = 0;
     double tmpanglediff = 0;
     double largestanglediff = 0;
-    double tmprobotangle = 0;
+    // double tmprobotangle = 0;
 
     int final_ldrPinout1 = 0;
     int final_ldrPinout2 = 0;
