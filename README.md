@@ -1,12 +1,13 @@
 # Robocup Junior Soccer Open Code
 
-
+[![GitHub watchers](https://img.shields.io/github/watchers/senrobo/open-code.svg?style=social)](https://github.com/senrobo/open-code/watchers)
+[![GitHub stars](https://img.shields.io/github/stars/senrobo/open-code.svg?style=social)](https://github.com/senrobo/open-code/stargazers)
 
 ## Directory Structure
 
 ``` bash
 ├──  include
-│  ├── 󰂺 README 
+│  ├── 󰂺 README
 │  ├──  shared.h
 │  ├──  util.h
 │  └──  vector.h
