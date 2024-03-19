@@ -3,9 +3,10 @@
 
 // Set Code
 
-#define DEBUG_EVERYTHING
+//#define DEBUG_EVERYTHING
 // #define DEBUG_LIGHT_RING
 // #define DEBUG_THRESHOLD_VALUES
+#define DEBUG_MOVEMENT
 
 // #define DEFENCE_BOT_CODE
 // print Serial

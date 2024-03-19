@@ -124,17 +124,17 @@ void Movement::drive(Point robotPosition) {
     auto x = sind(_targetdirection);
     auto y = cosd(_targetdirection);
 
-    if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
-        x = constrain(x, x, -300);
-    } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
-        x = constrain(x, 300, x);
-    }
+    // if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
+    //     x = constrain(x, x, -300);
+    // } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
+    //     x = constrain(x, 300, x);
+    // }
 
-    if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
-        y = constrain(y, y, -250);
-    } else if (robotPosition.y > -Y_AXIS_SLOWDOWN_START) {
-        y = constrain(y, 250, y);
-    }
+    // if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
+    //     y = constrain(y, y, -250);
+    // } else if (robotPosition.y > -Y_AXIS_SLOWDOWN_START) {
+    //     y = constrain(y, 250, y);
+    // }
 
     const auto transformspeed = [this](double velocityDirection,
                                        double angularComponent) {
@@ -188,7 +188,7 @@ void Movement::drive(Point robotPosition) {
     analogWrite(BL_PWM_PIN, constrain(abs(BLSpeed), -500, 500));
     analogWrite(BR_PWM_PIN, constrain(abs(BRSpeed), -500, 500));
 #endif
-#ifdef DEBUG
+#ifdef DEBUG_MOVEMENT
     const auto printSerial = [](double value) {
         Serial.printf("%5d", (int)value);
     };
