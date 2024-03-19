@@ -70,7 +70,7 @@ double calculatedthesholdValue[LDRPINCOUNT]{
     830, 832, 825, 841, 825, 832, 838, 834, 829, 841, 843, 840,
     850, 846, 848, 843, 836, 840, 830, 831, 828, 844, 823, 827};
 
-int LDRValues[LDRPINCOUNT];
+int RAWLDRVALUES[LDRPINCOUNT];
 int kickpower = 0;
 
 struct Solenoid {
@@ -120,42 +120,42 @@ void getValues() {
     // values from
     // https://docs.google.com/spreadsheets/d/14BAutKBhzy3ZVvEh6iIaexv4C6UqhUbg-NXU7_EWB44/edit#gid=0
 
-    LDRValues[0] = readMUXChannel(2, MuxInput2);
-    LDRValues[1] = readMUXChannel(1, MuxInput2);
-    LDRValues[2] = readMUXChannel(0, MuxInput2);
-    LDRValues[3] = readMUXChannel(7, MuxInput1);
-    LDRValues[4] = readMUXChannel(6, MuxInput1);
-    LDRValues[5] = readMUXChannel(5, MuxInput1);
-    LDRValues[6] = readMUXChannel(4, MuxInput1);
-    LDRValues[7] = readMUXChannel(3, MuxInput1);
-    LDRValues[8] = readMUXChannel(2, MuxInput1);
-    LDRValues[9] = readMUXChannel(1, MuxInput1);
-    LDRValues[10] = readMUXChannel(0, MuxInput1);
-    LDRValues[11] = readMUXChannel(15, MuxInput1);
-    LDRValues[12] = readMUXChannel(14, MuxInput1);
-    LDRValues[13] = readMUXChannel(13, MuxInput1);
-    LDRValues[14] = readMUXChannel(12, MuxInput1);
-    LDRValues[15] = readMUXChannel(11, MuxInput1);
-    LDRValues[16] = readMUXChannel(15, MuxInput2);
-    LDRValues[17] = readMUXChannel(14, MuxInput2);
-    LDRValues[18] = readMUXChannel(13, MuxInput2);
-    LDRValues[19] = readMUXChannel(12, MuxInput2);
-    LDRValues[20] = readMUXChannel(11, MuxInput2);
-    LDRValues[21] = readMUXChannel(12, MuxInput3);
-    LDRValues[22] = readMUXChannel(11, MuxInput3);
-    LDRValues[23] = readMUXChannel(10, MuxInput3);
-    LDRValues[24] = readMUXChannel(9, MuxInput3);
-    LDRValues[25] = readMUXChannel(8, MuxInput3);
-    LDRValues[26] = readMUXChannel(7, MuxInput3);
-    LDRValues[27] = readMUXChannel(6, MuxInput3);
-    LDRValues[28] = readMUXChannel(5, MuxInput3);
-    LDRValues[29] = readMUXChannel(4, MuxInput3);
-    LDRValues[30] = readMUXChannel(3, MuxInput3);
-    LDRValues[31] = readMUXChannel(2, MuxInput3);
-    LDRValues[32] = readMUXChannel(1, MuxInput3);
-    LDRValues[33] = readMUXChannel(0, MuxInput3);
-    LDRValues[34] = readMUXChannel(4, MuxInput2);
-    LDRValues[35] = readMUXChannel(3, MuxInput2);
+    RAWLDRVALUES[0] = readMUXChannel(2, MuxInput2);
+    RAWLDRVALUES[1] = readMUXChannel(1, MuxInput2);
+    RAWLDRVALUES[2] = readMUXChannel(0, MuxInput2);
+    RAWLDRVALUES[3] = readMUXChannel(7, MuxInput1);
+    RAWLDRVALUES[4] = readMUXChannel(6, MuxInput1);
+    RAWLDRVALUES[5] = readMUXChannel(5, MuxInput1);
+    RAWLDRVALUES[6] = readMUXChannel(4, MuxInput1);
+    RAWLDRVALUES[7] = readMUXChannel(3, MuxInput1);
+    RAWLDRVALUES[8] = readMUXChannel(2, MuxInput1);
+    RAWLDRVALUES[9] = readMUXChannel(1, MuxInput1);
+    RAWLDRVALUES[10] = readMUXChannel(0, MuxInput1);
+    RAWLDRVALUES[11] = readMUXChannel(15, MuxInput1);
+    RAWLDRVALUES[12] = readMUXChannel(14, MuxInput1);
+    RAWLDRVALUES[13] = readMUXChannel(13, MuxInput1);
+    RAWLDRVALUES[14] = readMUXChannel(12, MuxInput1);
+    RAWLDRVALUES[15] = readMUXChannel(11, MuxInput1);
+    RAWLDRVALUES[16] = readMUXChannel(15, MuxInput2);
+    RAWLDRVALUES[17] = readMUXChannel(14, MuxInput2);
+    RAWLDRVALUES[18] = readMUXChannel(13, MuxInput2);
+    RAWLDRVALUES[19] = readMUXChannel(12, MuxInput2);
+    RAWLDRVALUES[20] = readMUXChannel(11, MuxInput2);
+    RAWLDRVALUES[21] = readMUXChannel(12, MuxInput3);
+    RAWLDRVALUES[22] = readMUXChannel(11, MuxInput3);
+    RAWLDRVALUES[23] = readMUXChannel(10, MuxInput3);
+    RAWLDRVALUES[24] = readMUXChannel(9, MuxInput3);
+    RAWLDRVALUES[25] = readMUXChannel(8, MuxInput3);
+    RAWLDRVALUES[26] = readMUXChannel(7, MuxInput3);
+    RAWLDRVALUES[27] = readMUXChannel(6, MuxInput3);
+    RAWLDRVALUES[28] = readMUXChannel(5, MuxInput3);
+    RAWLDRVALUES[29] = readMUXChannel(4, MuxInput3);
+    RAWLDRVALUES[30] = readMUXChannel(3, MuxInput3);
+    RAWLDRVALUES[31] = readMUXChannel(2, MuxInput3);
+    RAWLDRVALUES[32] = readMUXChannel(1, MuxInput3);
+    RAWLDRVALUES[33] = readMUXChannel(0, MuxInput3);
+    RAWLDRVALUES[34] = readMUXChannel(4, MuxInput2);
+    RAWLDRVALUES[35] = readMUXChannel(3, MuxInput2);
     // ball catchment ldr
     SAMDlinedata.ballinCatchment = readMUXChannel(5, MuxInput2);
 }
@@ -192,9 +192,9 @@ void findLine() {
 #endif
 
         for (int i = 0; i < LDRPINCOUNT; i++) {
-            if (highValues[i] < LDRValues[i]) { highValues[i] = LDRValues[i]; }
+            if (highValues[i] < RAWLDRVALUES[i]) { highValues[i] = RAWLDRVALUES[i]; }
 
-            if (LDRValues[pinNumber] > LDRThresholds[pinNumber]) {
+            if (RAWLDRVALUES[pinNumber] > LDRThresholds[pinNumber]) {
                 SAMDlinedata.onLine = 2;
                 first_ldrPinout = pinNumber;
                 first_tmpldrangle = LDRBearings[pinNumber];
@@ -202,11 +202,12 @@ void findLine() {
                 calculatedthesholdValue[i] =
                     minRecordedValue[i] +
                     (maxRecordedValue[i] - minRecordedValue[i]) * 0.5;
-                if (LDRValues[i] > LDRThresholds[i]) {
+                if (RAWLDRVALUES[i] > LDRThresholds[i]) {
                     second_ldrPinout = i;
                     second_tmpldrangle = LDRBearings[i];
                     tmpanglediff = abs(LDRBearings[second_ldrPinout] -
                                        LDRBearings[first_ldrPinout]);
+
                     if (tmpanglediff > 180) tmpanglediff = 360 - tmpanglediff;
                     if (tmpanglediff > largestanglediff) {
                         //(first_tmpldrangle > 180) ? tmprobotangle = 360 -
