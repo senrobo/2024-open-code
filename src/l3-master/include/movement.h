@@ -21,10 +21,10 @@ struct linetrack {
     double lineDepth;
     double angleBisector;
     double targetLineDepth = 0.5;
-    bool trackLeftwards = true;  // track left of an angle bisector from the
-                                 // line facing into the field
+    bool trackLeftwards = true; // track left of an angle bisector from the
+                                // line facing into the field
 };
-}  // namespace Direction
+} // namespace Direction
 
 namespace Velocity {
 struct constant {
@@ -35,7 +35,7 @@ struct stopatPoint {
     double minSpeed;
     double maxSpeed;
 };
-}  // namespace Velocity
+} // namespace Velocity
 
 namespace Bearing {
 struct constant {
@@ -47,13 +47,14 @@ struct moveBearingtoPoint {
     Point destination;
     double finalBearing;
 };
-}  // namespace Bearing
+} // namespace Bearing
 
 class Movement {
-   public:
+  public:
     Movement();
 
-    void updateParameters(double actualbearing, double actualdirection, double actualvelocity);
+    void updateParameters(double actualbearing, double actualdirection,
+                          double actualvelocity);
 
     void initialize();
     // set relavent parameters
@@ -66,29 +67,29 @@ class Movement {
 
     void setconstantBearing(Bearing::constant params);
     void setmoveBearingtoPoint(Bearing::moveBearingtoPoint params);
-    void setBearingSettings(double min, double max, double KP, double KD, double KI);
+    void setBearingSettings(double min, double max, double KP, double KD,
+                            double KI);
 
-    //PID Controllera
-    PIDController bearingController = PIDController(0.0, -600, 600 , 3, 
-                                     20,0.0 , infinity(), 1, 0.2);
-    
-    PIDController directionController = PIDController(0.0, -90, 90, 1.5, 
-                                    0, 0, 1.0, 1, 0.2); 
-    
-    PIDController stopatPointController = PIDController(0.0, -360, 360 , 1.5, 
-                                    0.01, 0.1, 1.0, 1, 0.2); //not yet implemented
+    // PID Controllera
+    PIDController bearingController =
+        PIDController(0.0, -600, 600, 3, 20, 0.0, infinity(), 1, 0.2);
 
-    PIDController linetrackController = PIDController(0.0, -0.3, 0.3, 1, 
-                                    0, 0, infinity(), 1, 0.2); //not yet implemented
-                        
-                            
+    PIDController directionController =
+        PIDController(0.0, -90, 90, 1.5, 0, 0, 1.0, 1, 0.2);
+
+    PIDController stopatPointController = PIDController(
+        0.0, -360, 360, 1.5, 0.01, 0.1, 1.0, 1, 0.2); // not yet implemented
+
+    PIDController linetrackController = PIDController(
+        0.0, -0.3, 0.3, 1, 0, 0, infinity(), 1, 0.2); // not yet implemented
+
     void drive(Point robotPosition);
-    double applySigmoid(double startSpeed,double endSpeed, double progress, double constant);
-
+    double applySigmoid(double startSpeed, double endSpeed, double progress,
+                        double constant);
 
     std::vector<double> getmotorValues();
 
-   private:
+  private:
     // parameters
     double _targetdirection;
     double _targetbearing;

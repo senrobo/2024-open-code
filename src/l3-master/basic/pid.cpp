@@ -2,8 +2,11 @@
 
 #include <Arduino.h>
 
-PIDController::PIDController(double setpoint, double min, double max,
-                             double kp, double kd, double ki, double maxi, double dt, double measurementgain) : _setpoint(setpoint), _min(min), _max(max), _kp(kp), _kd(kd), _ki(ki), _maxi(maxi), _dt(dt), _measurementgain(measurementgain){};
+PIDController::PIDController(double setpoint, double min, double max, double kp,
+                             double kd, double ki, double maxi, double dt,
+                             double measurementgain)
+    : _setpoint(setpoint), _min(min), _max(max), _kp(kp), _kd(kd), _ki(ki),
+      _maxi(maxi), _dt(dt), _measurementgain(measurementgain){};
 
 double PIDController::advance(double processvariable) {
     _error = _setpoint - processvariable;
@@ -15,12 +18,14 @@ double PIDController::advance(double processvariable) {
     if (dt < _dt) return _lastoutput;
 
     // low pass filter to reduce noise
-    _currentestimate = (_measurementgain * _previousestimate) + (1 - _measurementgain) * _error;
+    _currentestimate = (_measurementgain * _previousestimate) +
+                       (1 - _measurementgain) * _error;
     _previousestimate = _currentestimate;
 
     // PID calculation
     _integral += _lasterror * _dt;
-    _integral = constrain(_integral, -_maxi, _maxi);  // integral anti-windup method
+    _integral =
+        constrain(_integral, -_maxi, _maxi); // integral anti-windup method
     double P = _kp * _error;
     double I = _ki * _integral * _dt;
     double D = _kd * (_currentestimate - _lasterror);
@@ -45,20 +50,17 @@ void PIDController::reset() {
     _lastoutput = 0;
 };
 
-void PIDController::updateGains(double kp, double kd, double ki, double measurementgain) {
+void PIDController::updateGains(double kp, double kd, double ki,
+                                double measurementgain) {
     _kp = kp;
     _kd = kd;
     _ki = ki;
     _measurementgain = measurementgain;
 };
 
-void PIDController::updateSetpoint(double setpoint) {
-    _setpoint = setpoint;
-};
+void PIDController::updateSetpoint(double setpoint) { _setpoint = setpoint; };
 
-double PIDController::getSetpoint() {
-    return _setpoint;
-};
+double PIDController::getSetpoint() { return _setpoint; };
 
 void PIDController::updateLimits(double min, double max, double maxi) {
     _min = min;
@@ -68,7 +70,8 @@ void PIDController::updateLimits(double min, double max, double maxi) {
 
 void PIDController::debugController() {
     auto printserial = [](double value) {
-        Serial.printf("%4d.%2d", (int)value, abs((int)(value * 100) % 100));  // 2 d.p.
+        Serial.printf("%4d.%2d", (int)value,
+                      abs((int)(value * 100) % 100)); // 2 d.p.
     };
     // void printSerial(double value){
     //     Serial.printf("%4d.%2d", (int)value , abs((int)(value * 100) % 100));

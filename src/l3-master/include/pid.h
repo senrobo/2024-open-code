@@ -5,9 +5,9 @@
 #include "vector.h"
 
 class PIDController {
-   public:
-    PIDController(double setpoint, double min, double max, double kp,
-                  double kd, double ki, double maxi, double dt, double measurementgain);
+  public:
+    PIDController(double setpoint, double min, double max, double kp, double kd,
+                  double ki, double maxi, double dt, double measurementgain);
 
     double advance(double processvariable);
     void reset();
@@ -19,7 +19,7 @@ class PIDController {
 
     void debugController();
 
-   private:
+  private:
     // tuning parameters
     double _setpoint;
     double _min;
@@ -27,7 +27,7 @@ class PIDController {
     double _kp;
     double _ki;
     double _kd;
-    double _maxi;  // prevents system saturation
+    double _maxi; // prevents system saturation
     double _dt;
     // internal values
     double _integral;

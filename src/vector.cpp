@@ -8,19 +8,17 @@
 
 Vector::Vector() {}
 
-Vector::Vector(double angle, double distance) : angle(angle), distance(distance) {}
+Vector::Vector(double angle, double distance)
+    : angle(angle), distance(distance) {}
 
 Vector Vector::fromPoint(Point point) {
-    return {atand(point.x, point.y), sqrtf(point.x * point.x + point.y * point.y)};
+    return {atand(point.x, point.y),
+            sqrtf(point.x * point.x + point.y * point.y)};
 }
 
-double Vector::x() const {
-    return sind(angle) * distance;
-}
+double Vector::x() const { return sind(angle) * distance; }
 
-double Vector::y() const {
-    return cosd(angle) * distance;
-}
+double Vector::y() const { return cosd(angle) * distance; }
 
 Vector &Vector::operator=(const Vector &other) {
     this->angle = other.angle;
@@ -29,8 +27,10 @@ Vector &Vector::operator=(const Vector &other) {
 }
 
 Vector Vector::operator+(const Vector &other) const {
-    const double x = distance * sind(angle) + other.distance * sind(other.angle);
-    const double y = distance * cosd(angle) + other.distance * cosd(other.angle);
+    const double x =
+        distance * sind(angle) + other.distance * sind(other.angle);
+    const double y =
+        distance * cosd(angle) + other.distance * cosd(other.angle);
     return {atand(x, y), sqrtf(x * x + y * y)};
 }
 
@@ -39,8 +39,10 @@ Vector Vector::operator-() const {
 }
 
 Vector Vector::operator-(const Vector &other) const {
-    const double x = distance * sind(angle) - other.distance * sind(other.angle);
-    const double y = distance * cosd(angle) - other.distance * cosd(other.angle);
+    const double x =
+        distance * sind(angle) - other.distance * sind(other.angle);
+    const double y =
+        distance * cosd(angle) - other.distance * cosd(other.angle);
     return {atand(x, y), sqrtf(x * x + y * y)};
 }
 Vector Vector::operator*(const double other) const {

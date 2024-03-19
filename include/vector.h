@@ -11,14 +11,12 @@ struct Point {
         return {x == other.x && y == other.y};
     }
 
-    bool operator!=(const Point &other) const {
-        return {!(*this == other)};
-    }
+    bool operator!=(const Point &other) const { return {!(*this == other)}; }
 };
 
 // Vector in polar coordinates with angles in degrees and distance in cm
 class Vector {
-   public:
+  public:
     Vector();
     Vector(double angle, double distance);
 
@@ -33,10 +31,10 @@ class Vector {
     // operators
     Vector &operator=(const Vector &other);
     Vector operator+(const Vector &other) const;
-    Vector operator-() const;  // negation
+    Vector operator-() const; // negation
     Vector operator-(const Vector &other) const;
-    Vector operator*(const double other) const;  // angle is not affected
-    Vector operator/(const double other) const;  // angle is not affected
+    Vector operator*(const double other) const; // angle is not affected
+    Vector operator/(const double other) const; // angle is not affected
     bool exists() const;
 };
 

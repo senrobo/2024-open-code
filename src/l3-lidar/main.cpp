@@ -19,7 +19,7 @@ TFLI2C tflI2C[4] = {front, right, back, left};
 
 int16_t tfDist[4];
 
-int tfAddress[4] = {0x35, 0x22, 0x33, 0x44};  // front, right, back, left
+int tfAddress[4] = {0x35, 0x22, 0x33, 0x44}; // front, right, back, left
 // int tfAddr[4] = {0x11, 0x22, 0x33, 0x44}; // front, right, back, left
 struct lidardata {
     int distance[4];
@@ -43,7 +43,7 @@ void i2cscanner() {
         if (error == 0) {
             Serial.print("i2c device found at address 0x");
             if (address < 16) Serial.print("0");
-            Serial.print(address, HEX);  // ASCII-encoded hexadecimal
+            Serial.print(address, HEX); // ASCII-encoded hexadecimal
             Serial.println();
             nDevices++;
         } else if (error == 4) {
@@ -52,7 +52,8 @@ void i2cscanner() {
             Serial.println(address, HEX);
         }
     }
-    nDevices == 0 ? Serial.println("No i2c devices found\n") : Serial.println("Scanning completed\n");
+    nDevices == 0 ? Serial.println("No i2c devices found\n")
+                  : Serial.println("Scanning completed\n");
     delay(1000);
 }
 
@@ -64,15 +65,13 @@ void setup() {
     Wire.begin();
     // tflI2C.Set_I2C_Addr(0x11,0x35);
     // tflI2C.Soft_Reset(0x11);
-    for (int i = 0; i < 4; i++) {
-        tflI2C[i].Save_Settings(tfAddress[i]);
-    }
+    for (int i = 0; i < 4; i++) { tflI2C[i].Save_Settings(tfAddress[i]); }
 }
 
 void loop() {
     // i2cscanner();
     for (int i = 0; i < 4; i++) {
-        if (tflI2C[i].getData(tfDist[i], tfAddress[i]))  // If read okay...
+        if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
         {
             if (i < 3) {
                 Serial.print(" Dist: ");

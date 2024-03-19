@@ -12,15 +12,15 @@ struct CameraTxPayload {
     CameraTxData cameraTxData;
 };
 
-struct L1TxData{
-  int onLine = 0;
-  float angleBisector;
-  float depthinLine;
-  int linetrackldr1;
-  int linetrackldr2;
-  int ballinCatchment;
-//   int SerialLDRID = 0;
-//   int SerialLDRvalue = 0;
+struct L1TxData {
+    int onLine = 0;
+    float angleBisector;
+    float depthinLine;
+    int linetrackldr1;
+    int linetrackldr2;
+    int ballinCatchment;
+    //   int SerialLDRID = 0;
+    //   int SerialLDRvalue = 0;
 };
 
 struct L1TxPayload {

@@ -1,58 +1,30 @@
 #include "ballposition.h"
 
+BallPosition::BallPosition() : kf(A, B, Q, R, I, H) {
+    kf.updateConstants(A, B, Q, R, I, H);
+    kf.initialize(x_hat, P, K);
+};
 
-BallPosition::BallPosition() : kf(A, B, Q, R, I, H){
-  kf.updateConstants(A, B, Q, R, I, H);
-  kf.initialize(x_hat, P, K);
- };
+void BallPosition::updateConstants(int dt) {
+    A << 1, 0, dt, 0, dt * dt, 0, 0, 1, 0, dt, 0, dt * dt, 0, 0, 1, 0, dt, 0, 0,
+        0, 0, 1, 0, dt, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0;
 
-void BallPosition::updateConstants(int dt){
-  A << 1, 0, dt, 0, dt * dt, 0,
-       0, 1, 0, dt, 0, dt * dt,
-       0, 0, 1, 0, dt, 0,
-       0, 0, 0, 1, 0, dt,
-       0, 0, 0, 0, 1, 0,
-       0, 0, 0, 0, 0, 0;
+    B << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 
+    H << 1, 0, dt, 0, powf(dt, 2), 0, 0, 1, 0, dt, 0, powf(dt, 2);
 
-  B << 0, 0,
-       0, 0,
-       0, 0,
-       0, 0,
-       0, 0,
-       0, 0;
+    Q << 0.01, 0, 0, 0, 0, 0, 0, 0.01, 0, 0, 0, 0, 0, 0, .01, 0, 0, 0, 0, 0, 0,
+        .01, 0, 0, 0, 0, 0, 0, .5, 0, 0, 0, 0, 0, 0, .5,
 
-  H << 1, 0, dt, 0, powf(dt, 2), 0,
-       0, 1, 0, dt, 0, powf(dt, 2);
+        R << cameraVariance, 0, 0, cameraVariance;
 
-  Q << 0.01, 0, 0, 0, 0, 0,
-       0, 0.01, 0, 0, 0, 0,
-       0, 0, .01, 0, 0, 0,
-       0, 0, 0, .01, 0, 0,
-       0, 0, 0, 0, .5, 0,
-       0, 0, 0, 0, 0, .5,
+    P << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1;
 
+    I << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1;
 
-  R << cameraVariance, 0,
-       0, cameraVariance;
-  
-  P << 1, 0, 0, 0, 0, 0,
-       0, 1, 0, 0, 0, 0,
-       0, 0, 1, 0, 0, 0,
-       0, 0, 0, 1, 0, 0,
-       0, 0, 0, 0, 1, 0,
-       0, 0, 0, 0, 0, 1;
-  
-  I << 1, 0, 0, 0, 0, 0,
-       0, 1, 0, 0, 0, 0,
-       0, 0, 1, 0, 0, 0,
-       0, 0, 0, 1, 0, 0,
-       0, 0, 0, 0, 1, 0,
-       0, 0, 0, 0, 0, 1;
- 
-
-  kf.updateConstants(A,B,Q,R,I,H);
-
+    kf.updateConstants(A, B, Q, R, I, H);
 }
 
 void BallPosition::updateSensorMeasurement(int x_cam, int y_cam) {
