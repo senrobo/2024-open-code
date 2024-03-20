@@ -10,7 +10,7 @@
 
 // #define DEFENCE_BOT_CODE
 // print Serial
-#define DEBUG_DEFENCE_BOT
+//#define DEBUG_DEFENCE_BOT
 // defence Bot settings
 #define DEFENCE_DEPTH_IN_LINE 0.7 // from 0 to 2
 // https://www.desmos.com/calculator/btpwnfdqyq
@@ -41,12 +41,16 @@
 #define LOCALISE_CODE_TARGET_BEARING 0 // do this
 
 // slowdown with localisation code
-#define X_AXIS_SLOWDOWN_START 70
-#define Y_AXIS_SLOWDOWN_START 90
+#define X_AXIS_SLOWDOWN_START 60
+#define Y_AXIS_SLOWDOWN_START 70
+#define X_AXIS_SLOWDOWN_END 70
+#define Y_AXIS_SLOWDOWN_END 80
+#define X_AXIS_SLOWDOWN_SPEED 300
+#define Y_AXIS_SLOWDOWN_SPEED 300
 
 // dribbler settings
 #define DRIBBLER_PWM_PIN        0
-#define BRUSHLESS_DEFAULT_SPEED 178
+#define BRUSHLESS_DEFAULT_SPEED 177
 
 // lidars processing settings
 #define X_AXIS_LIDARS_POSITIONAL_OFFSET                                        \

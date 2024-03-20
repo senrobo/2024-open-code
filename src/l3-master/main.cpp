@@ -101,11 +101,11 @@ void receiveL3TxData(const byte *buf, size_t size) {
     memcpy(&payload, buf, sizeof(payload));
     sensorValues.relativeBearing = -payload.sensorvalues.relativeBearing;
     sensorValues.yellowgoal_relativeposition =
-        payload.sensorvalues.yellowgoal_relativeposition;
+        payload.sensorvalues.bluegoal_relativeposition;
     sensorValues.ball_relativeposition =
         payload.sensorvalues.ball_relativeposition;
     sensorValues.bluegoal_relativeposition =
-        payload.sensorvalues.bluegoal_relativeposition;
+        payload.sensorvalues.yellowgoal_relativeposition;
 
     for (int i = 0; i < 4; i++) {
         sensorValues.lidardist[i] = payload.sensorvalues.lidardist[i];
@@ -240,7 +240,7 @@ void setup() {
     delay(10);
     analogWriteResolution(10);
     Serial5.begin(115200);
-    Serial3.begin(115200);
+    Serial3.begin(57600);
     Serial.begin(9600);
     L3TeensySerial.setStream(
         &Serial5); // set serial stream to packet communcation to default serial
@@ -514,7 +514,7 @@ void loop() {
         movement.setconstantVelocity(Velocity::constant{350});
     }
 
-    else if (avg_ballinCatchment(dt, 10) >= 700) { // 720
+    else if (avg_ballinCatchment(dt, 10) >= 0) { // 720
 
         if (execution.kickComplete == 1) {
             execution.setStrategy = 1;
@@ -691,11 +691,16 @@ void loop() {
     printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
     Serial.print(" | processedleftLidar: ");
     printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
+    // Location
+    Serial.print(" | X_position: ");
+    printDouble(Serial, localize().x(), 3, 0);
+    Serial.print(" | Y_position: ");
+    printDouble(Serial, localize().y(), 3, 0);
     Serial.println("");
 #endif
 
-    movement.drive({0, 0});
-    solenoid.kick = 0;
+    movement.drive({localize().x(), localize().y()});
+    //solenoid.kick = 0;
     byte buf[sizeof(L2TxtoL1payload)];
     memcpy(buf, &solenoid, sizeof(solenoid));
     L1Serial.send(buf, sizeof(buf));

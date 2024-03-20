@@ -121,20 +121,31 @@ void Movement::drive(Point robotPosition) {
     _movingbearing =
         bearingController.advance(clipAngleto180degrees(_actualbearing));
 
-    auto x = sind(_targetdirection);
-    auto y = cosd(_targetdirection);
+    double x = sind(_targetdirection);
+    double y = cosd(_targetdirection);
 
-    // if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
-    //     x = constrain(x, x, -300);
-    // } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
-    //     x = constrain(x, 300, x);
-    // }
 
-    // if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
-    //     y = constrain(y, y, -250);
-    // } else if (robotPosition.y > -Y_AXIS_SLOWDOWN_START) {
-    //     y = constrain(y, 250, y);
-    // }
+    
+    
+    if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
+        double deccel = constrain(X_AXIS_SLOWDOWN_SPEED - ((robotPosition.x - X_AXIS_SLOWDOWN_START) / 
+                                 (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) * X_AXIS_SLOWDOWN_SPEED),0, 1000);
+
+        x = constrain(x, -600.0, deccel);
+    } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
+        double deccel = constrain(X_AXIS_SLOWDOWN_SPEED - ((robotPosition.x + X_AXIS_SLOWDOWN_START) / 
+                                 (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *  X_AXIS_SLOWDOWN_SPEED), -1000, 0);
+        x = constrain(x, deccel, 600);
+    }
+    if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
+    double deccel = constrain(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y - Y_AXIS_SLOWDOWN_START) / 
+                                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED), 0, 1000);
+        y = constrain(y, -600.0,deccel);
+    } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START) {
+    double deccel = constrain(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y + Y_AXIS_SLOWDOWN_START) / 
+                                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED), -1000, 0);
+        y = constrain(y, deccel, 600);
+    }
 
     const auto transformspeed = [this](double velocityDirection,
                                        double angularComponent) {
@@ -205,6 +216,11 @@ void Movement::drive(Point robotPosition) {
     printSerial(_targetdirection);
     Serial.print(" | TargetVelocity: ");
     printSerial(_targetvelocity);
+    Serial.print(" | YPosition: ");
+    printSerial(robotPosition.y);
+    Serial.print(" | Y: ");
+    printSerial(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y - Y_AXIS_SLOWDOWN_START) / 
+                                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED));
     Serial.println(" ");
 
 #endif

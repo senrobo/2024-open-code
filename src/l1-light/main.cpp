@@ -255,7 +255,7 @@ void printHighestValue(double thresholdValuePercentage) {
 
 void setup() {
 
-    Serial1.begin(115200);
+    Serial1.begin(57600);
     Serial.begin(9600);
 
     L1Serial.setStream(&Serial1);
