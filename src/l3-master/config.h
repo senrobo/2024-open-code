@@ -6,10 +6,11 @@
 #define DEBUG_EVERYTHING
 // #define DEBUG_LIGHT_RING
 // #define DEBUG_THRESHOLD_VALUES
+// #define DEBUG_MOVEMENT
 
 // #define DEFENCE_BOT_CODE
 // print Serial
-#define DEBUG_DEFENCE_BOT
+//#define DEBUG_DEFENCE_BOT
 // defence Bot settings
 #define DEFENCE_DEPTH_IN_LINE 0.7 // from 0 to 2
 // https://www.desmos.com/calculator/btpwnfdqyq
@@ -32,7 +33,7 @@
 #define DEGREE_MULTIPLIER 20
 
 #define DRIBBLER_LOWER_LIMIT 128
-#define DRIBBLER_UPPER_LIMIT 192
+#define DRIBBLER_UPPER_LIMIT 230
 
 // #define DEBUG_LIDAR
 
@@ -40,12 +41,16 @@
 #define LOCALISE_CODE_TARGET_BEARING 0 // do this
 
 // slowdown with localisation code
-#define X_AXIS_SLOWDOWN_START 70
-#define Y_AXIS_SLOWDOWN_START 90
+#define X_AXIS_SLOWDOWN_START 60
+#define X_AXIS_SLOWDOWN_END 65
+#define Y_AXIS_SLOWDOWN_START 60
+#define Y_AXIS_SLOWDOWN_END 70
+#define X_AXIS_SLOWDOWN_SPEED 300
+#define Y_AXIS_SLOWDOWN_SPEED 300
 
 // dribbler settings
 #define DRIBBLER_PWM_PIN        0
-#define BRUSHLESS_DEFAULT_SPEED 178
+#define BRUSHLESS_DEFAULT_SPEED 210 //220
 
 // lidars processing settings
 #define X_AXIS_LIDARS_POSITIONAL_OFFSET                                        \
@@ -56,7 +61,7 @@
 #define LENGTH_OF_FIELD                 243.0F
 #define LENGTH_ERROR                    15.0F
 #define WIDTH_ERROR                     10.0F
-#define X_CAMERA_ERROR                  15.0F
-#define Y_CAMERA_ERROR                  20.0F
+#define X_CAMERA_ERROR                  8.0F
+#define Y_CAMERA_ERROR                  12.0F
 
 #endif

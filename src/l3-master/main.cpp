@@ -33,7 +33,7 @@ Execution execution;
 
 // https://www.desmos.com/calculator/5uexflvu3o
 
-int highValues[36] = {5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
+float highValues[36] = {5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
                       5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
                       5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
                       5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00};
@@ -59,7 +59,8 @@ double frontMirrorMapping(double distance) {
                 1.61827053 * powf(10, -4) * powf(distance, 4) +
                 1.88452202 * powf(10, -2) * powf(distance, 3) -
                 1.04993865 * powf(10, 0) * powf(distance, 2) +
-                2.82679699 * 10 * distance - 2.83240269 * powf(10, 2));
+                2.82679699 * 10 * distance - 
+                2.83240269 * powf(10, 2));
     } else
         return 0;
 }
@@ -101,11 +102,11 @@ void receiveL3TxData(const byte *buf, size_t size) {
     memcpy(&payload, buf, sizeof(payload));
     sensorValues.relativeBearing = -payload.sensorvalues.relativeBearing;
     sensorValues.yellowgoal_relativeposition =
-        payload.sensorvalues.yellowgoal_relativeposition;
+        payload.sensorvalues.bluegoal_relativeposition;
     sensorValues.ball_relativeposition =
         payload.sensorvalues.ball_relativeposition;
     sensorValues.bluegoal_relativeposition =
-        payload.sensorvalues.bluegoal_relativeposition;
+        payload.sensorvalues.yellowgoal_relativeposition;
 
     for (int i = 0; i < 4; i++) {
         sensorValues.lidardist[i] = payload.sensorvalues.lidardist[i];
@@ -240,7 +241,7 @@ void setup() {
     delay(10);
     analogWriteResolution(10);
     Serial5.begin(115200);
-    Serial3.begin(115200);
+    Serial3.begin(57600);
     Serial.begin(9600);
     L3TeensySerial.setStream(
         &Serial5); // set serial stream to packet communcation to default serial
@@ -295,6 +296,14 @@ void loop() {
     verifyingObjectExistance();
     processLidars();
 
+    (processedValues.lidarConfidence[0] == 1) ? frontVariance = 3 : frontVariance = 400;
+    (processedValues.lidarConfidence[1] == 1) ? rightVariance = 3 : rightVariance = 400;
+    (processedValues.lidarConfidence[2] == 1) ? backVariance = 3 : backVariance = 400;
+    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 3 : leftVariance = 400;
+
+    sensorfusion.updateConstants(frontVariance, backVariance, leftVariance,
+                                rightVariance, 10, 15);
+
     double dt = loopTimeinMillis();
     ballposition.updateConstants(dt / 1000);
     ballposition.updateSensorMeasurement(
@@ -302,8 +311,7 @@ void loop() {
         sensorValues.ball_relativeposition.y());
     processedValues.ball_relativeposition = ballposition.updatePosition();
 
-    sensorfusion.updateConstants(frontVariance, backVariance, leftVariance,
-                                 rightVariance, 10, 15);
+
 
 #ifdef DEBUG_LIGHT_RING
     const auto printSerial = [](int value) { Serial.printf("%3d", value); };
@@ -514,18 +522,17 @@ void loop() {
         movement.setconstantVelocity(Velocity::constant{350});
     }
 
-    else if (avg_ballinCatchment(dt, 10) >= 700) { // 720
+    else if (true) { // 720
 
         if (execution.kickComplete == 1) {
             execution.setStrategy = 1;
             execution.kickStrategySequence = 0;
             execution.kickComplete = 0;
-            execution.targetBearing = 0;
+            execution.targetBearing = 180;
         } else if (execution.strategy == 1) {
-            execution.targetBearing = 0;
+            execution.targetBearing = 180;
         }
         // Serial.println(processedValues.ball_relativeposition.distance);
-        execution.targetBearing = 0;
         // Serial.println(sensorValues.ball_relativeposition.distance);
         Vector yellow_goalactualposition = {
             sensorValues.yellowgoal_relativeposition.angle +
@@ -551,7 +558,7 @@ void loop() {
 
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
-                    450, 250,
+                    500, 300,
                     curveAroundBallMultiplier(
                         processedValues.ball_relativeposition.angle,
                         processedValues.ball_relativeposition.distance - 20,
@@ -613,6 +620,7 @@ void loop() {
         }
     }
 
+    execution.targetBearing = 180;
     movement.setconstantBearing(Bearing::constant{
         execution.targetBearing, sensorValues.relativeBearing});
 
@@ -691,11 +699,16 @@ void loop() {
     printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
     Serial.print(" | processedleftLidar: ");
     printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
+    // Location
+    Serial.print(" | X_position: ");
+    printDouble(Serial, localize().x(), 3, 0);
+    Serial.print(" | Y_position: ");
+    printDouble(Serial, localize().y(), 3, 0);
     Serial.println("");
 #endif
 
-    movement.drive({0, 0});
-    solenoid.kick = 0;
+    movement.drive({localize().x(), localize().y()});
+    //solenoid.kick = 0;
     byte buf[sizeof(L2TxtoL1payload)];
     memcpy(buf, &solenoid, sizeof(solenoid));
     L1Serial.send(buf, sizeof(buf));
