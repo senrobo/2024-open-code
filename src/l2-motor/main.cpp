@@ -70,12 +70,14 @@ void receiveCameraTxData(const byte *buf, size_t size) {
 }
 
 void getBNOreading() {
-    bno.enableGyroIntegratedRotationVector();
+    //bno.enableGyroIntegratedRotationVector();
+    bno.enableGameRotationVector();
     if (bno.getSensorEvent() == true) {
         if (bno.getSensorEventID() ==
-            SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR) {
+            
+            SENSOR_REPORTID_ROTATION_VECTOR) {
             sensorvalues.relativeBearing =
-                (bno.getGyroIntegratedRVK()) *
+                (bno.getRawGyroZ) *
                 180.0; // Convert yaw / heading to degree
         }
     }

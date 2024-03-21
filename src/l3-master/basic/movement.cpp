@@ -118,8 +118,24 @@ void Movement::setBearingSettings(double minV, double maxV, double KP,
 
 void Movement::drive(Point robotPosition) {
     bearingController.updateSetpoint(_targetbearing);
+
+    if (_targetbearing <= 90 && _targetbearing >= -90){
+        _movingbearing =
+            bearingController.advance(clipAngleto180degrees(_actualbearing));
+    }
+    else if (_targetbearing > 90 && _targetbearing <= 135 ){
+        _movingbearing =
+            bearingController.advance(clipAngleto180degrees(_actualbearing));
+    }
+    else if (_targetbearing < -90 && _targetbearing >= -135 ){
+        _movingbearing =
+            bearingController.advance(clipAngleto180degrees(_actualbearing));
+    }
+    else{
     _movingbearing =
-        bearingController.advance(clipAngleto180degrees(_actualbearing));
+        bearingController.advance(clipAngleto360degrees(_actualbearing));
+    }
+
 
     double x = sind(_targetdirection);
     double y = cosd(_targetdirection);

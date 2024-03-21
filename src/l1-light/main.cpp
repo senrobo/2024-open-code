@@ -8,29 +8,30 @@
 
 #define SERIAL_PORT_USBVIRTUAL Serial
 #define SERIAL_PORT_MONITOR    Serial
-#define SAMD21
+#define TEENSY
 using namespace std;
+//#define DEBUG
 
 #ifdef SAMD21
-    #define S0           9
-    #define S1           8
-    #define S2           1
-    #define S3           2
-    #define MuxInput1    3
-    #define MuxInput2    4
-    #define MuxInput3    5
-    #define Solenoid_Pin 0
+    #define S0           16
+    #define S1           15
+    #define S2           17
+    #define S3           18
+    #define MuxInput1    19
+    #define MuxInput2    22
+    #define MuxInput3    23
+    #define Solenoid_Pin 19
 #endif
 
-#ifdef ESP32
-    #define S0           9
-    #define S1           8
-    #define S2           4
-    #define S3           5
-    #define MuxInput1    1
-    #define MuxInput2    2
-    #define MuxInput3    3
-    #define Solenoid_Pin 0
+#ifdef TEENSY
+    #define S0           15
+    #define S1           16
+    #define S2           17
+    #define S3           18
+    #define MuxInput1    19
+    #define MuxInput2    22
+    #define MuxInput3    23
+    #define Solenoid_Pin 20
 #endif
 
 #define LDRPINCOUNT 36
@@ -183,10 +184,10 @@ void findLine() {
 #ifdef DEBUG
         const auto printSerial = [](int value) { Serial.printf("%3d", value); };
         if (pinNumber == 35) {
-            printSerial(calculatedthesholdValue[pinNumber]);
+            printSerial(LDRValues[pinNumber]);
             Serial.println(" ");
         } else {
-            printSerial(calculatedthesholdValue[pinNumber]);
+            printSerial(LDRValues[pinNumber]);
             Serial.print(" , ");
         }
 #endif
@@ -297,6 +298,12 @@ void loop() {
     Serial.print(SAMDlinedata.ballinCatchment);
     Serial.print(" , ");
     Serial.println(SAMDlinedata.onLine);
+
+     
+    digitalWrite(Solenoid_Pin, HIGH);
+    delay(200);
+    digitalWrite(Solenoid_Pin, LOW);
+    delay(3000);
 
     // Serial.print("hei");
 
