@@ -72,7 +72,7 @@ class Movement {
 
     // PID Controllera
     PIDController bearingController =
-        PIDController(0.0, -500, 500, 4, 20, 0.0, infinity(), 1, 0.2);
+        PIDController(0.0, -500, 500, 4, 40, 0.0, infinity(), 1, 0.2);
 
     PIDController directionController =
         PIDController(0.0, -90, 90, 1.5, 0, 0, 1.0, 1, 0.2);
@@ -81,7 +81,7 @@ class Movement {
         0.0, -360, 360, 1.5, 0.01, 0.1, 1.0, 1, 0.2); // not yet implemented
 
     PIDController linetrackController = PIDController(
-        0.0, -0.3, 0.3, 1, 0, 0, infinity(), 1, 0.2); // not yet implemented
+        0.0, -0.3, 0.3, 1.2, 0, 0, infinity(), 1, 0.2); // not yet implemented
 
     void drive(Point robotPosition);
     double applySigmoid(double startSpeed, double endSpeed, double progress,

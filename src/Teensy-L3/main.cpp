@@ -141,7 +141,15 @@ void loop() {
     Serial.print(", ");
     Serial.print(sensorvalues.bluegoal_relativeposition.distance);
     Serial.print(", ");
-    Serial.println(sensorvalues.yellowgoal_relativeposition.distance);
+        Serial.print(sensorvalues.LidarDist[0]);
+    Serial.print(", ");
+    Serial.print(sensorvalues.LidarDist[1]);
+    Serial.print(", ");
+        Serial.print(sensorvalues.LidarDist[2]);
+    Serial.print(", ");
+    Serial.print(sensorvalues.LidarDist[3]);
+    Serial.print(", ");
+    Serial.println(" ");
 
     byte buf[sizeof(teensytoTeensyTxPayload)];
     memcpy(buf, &sensorvalues, sizeof(sensorvalues));

@@ -86,10 +86,10 @@ void findLine() {
 #ifdef DEBUG_LIGHT_RING
         const auto printSerial = [](int value) { Serial.printf("%3d", value); };
         if (pinNumber == 35) {
-            printSerial(lightArray.RAWLDRVALUES[pinNumber]);
+            printSerial(lightArray.highValues[pinNumber]);
             Serial.println(" ");
         } else {
-            printSerial(lightArray.RAWLDRVALUES[pinNumber]);
+            printSerial(lightArray.highValues[pinNumber]);
             Serial.print(" , ");
         }
 #endif
@@ -136,6 +136,7 @@ void findLine() {
             sensorValues.angleBisector =
                 lightArray.LDRBearings[final_ldrPinout2] + largestanglediff / 2;
         }
+        sensorValues.angleBisector = clipAngleto360degrees(360 - sensorValues.angleBisector);
         sensorValues.depthinLine =
             1.0 - cosf((largestanglediff / 2.0) / 180.0 * PI);
         //(1.0 - (cosf((90/2)/180 * PI) / 1.0));

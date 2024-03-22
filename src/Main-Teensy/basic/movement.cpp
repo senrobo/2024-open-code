@@ -179,6 +179,20 @@ void Movement::drive(Point robotPosition) {
     double BLSpeed = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
                      BL_MULTIPLIER;
 
+    if (FLSpeed < 300 && FLSpeed > -300){
+        FLSpeed = 0;
+    }
+    if (FRSpeed < 300 && FRSpeed > -300){
+        FRSpeed = 0;
+    }
+    if (BLSpeed < 300 && BLSpeed > -300){
+        BLSpeed = 0;
+    }
+    if (BRSpeed < 300 && BRSpeed > -300){
+        BRSpeed = 0;
+    }
+
+
 #ifdef ROBOT1
     digitalWriteFast(FL_IN1_PIN, FLSpeed > 0 ? LOW : HIGH);
     digitalWriteFast(FL_IN2_PIN, FLSpeed > 0 ? HIGH : LOW);
