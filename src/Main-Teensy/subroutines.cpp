@@ -11,6 +11,137 @@
 #include "shared.h"
 #include "util.h"
 
+
+void selectMUXChannel(uint8_t channel) {
+    digitalWrite(S0, channel & 1);
+    digitalWrite(S1, (channel >> 1) & 1);
+    digitalWrite(S2, (channel >> 2) & 1);
+    digitalWrite(S3, (channel >> 3) & 1);
+}
+int readMUXChannel(int index, int muxInput) {
+    selectMUXChannel(index);
+    return analogRead(muxInput);
+}
+void getValues() {
+    // values from
+    // https://docs.google.com/spreadsheets/d/14BAutKBhzy3ZVvEh6iIaexv4C6UqhUbg-NXU7_EWB44/edit#gid=0
+
+    RAWLDRVALUES[0] = readMUXChannel(2, MuxInput2);
+    RAWLDRVALUES[1] = readMUXChannel(1, MuxInput2);
+    RAWLDRVALUES[2] = readMUXChannel(0, MuxInput2);
+    RAWLDRVALUES[3] = readMUXChannel(7, MuxInput1);
+    RAWLDRVALUES[4] = readMUXChannel(6, MuxInput1);
+    RAWLDRVALUES[5] = readMUXChannel(5, MuxInput1);
+    RAWLDRVALUES[6] = readMUXChannel(4, MuxInput1);
+    RAWLDRVALUES[7] = readMUXChannel(3, MuxInput1);
+    RAWLDRVALUES[8] = readMUXChannel(2, MuxInput1);
+    RAWLDRVALUES[9] = readMUXChannel(1, MuxInput1);
+    RAWLDRVALUES[10] = readMUXChannel(0, MuxInput1);
+    RAWLDRVALUES[11] = readMUXChannel(15, MuxInput1);
+    RAWLDRVALUES[12] = readMUXChannel(14, MuxInput1);
+    RAWLDRVALUES[13] = readMUXChannel(13, MuxInput1);
+    RAWLDRVALUES[14] = readMUXChannel(12, MuxInput1);
+    RAWLDRVALUES[15] = readMUXChannel(11, MuxInput1);
+    RAWLDRVALUES[16] = readMUXChannel(15, MuxInput2);
+    RAWLDRVALUES[17] = readMUXChannel(14, MuxInput2);
+    RAWLDRVALUES[18] = readMUXChannel(13, MuxInput2);
+    RAWLDRVALUES[19] = readMUXChannel(12, MuxInput2);
+    RAWLDRVALUES[20] = readMUXChannel(11, MuxInput2);
+    RAWLDRVALUES[21] = readMUXChannel(12, MuxInput3);
+    RAWLDRVALUES[22] = readMUXChannel(11, MuxInput3);
+    RAWLDRVALUES[23] = readMUXChannel(10, MuxInput3);
+    RAWLDRVALUES[24] = readMUXChannel(9, MuxInput3);
+    RAWLDRVALUES[25] = readMUXChannel(8, MuxInput3);
+    RAWLDRVALUES[26] = readMUXChannel(7, MuxInput3);
+    RAWLDRVALUES[27] = readMUXChannel(6, MuxInput3);
+    RAWLDRVALUES[28] = readMUXChannel(5, MuxInput3);
+    RAWLDRVALUES[29] = readMUXChannel(4, MuxInput3);
+    RAWLDRVALUES[30] = readMUXChannel(3, MuxInput3);
+    RAWLDRVALUES[31] = readMUXChannel(2, MuxInput3);
+    RAWLDRVALUES[32] = readMUXChannel(1, MuxInput3);
+    RAWLDRVALUES[33] = readMUXChannel(0, MuxInput3);
+    RAWLDRVALUES[34] = readMUXChannel(4, MuxInput2);
+    RAWLDRVALUES[35] = readMUXChannel(3, MuxInput2);
+    // ball catchment ldr
+    sensorValues.ballinCatchment = readMUXChannel(5, MuxInput2);
+}
+
+void findLine() {
+    getValues();
+    // initialize essential variables
+    int first_tmpldrangle = 0;
+    int first_ldrPinout = 0;
+    int second_tmpldrangle = 0;
+    int second_ldrPinout = 0;
+    double tmpanglediff = 0;
+    double largestanglediff = 0;
+    double tmprobotangle = 0;
+
+    int final_ldrPinout1 = 0;
+    int final_ldrPinout2 = 0;
+    sensorValues.onLine = 1; 
+
+    for (int pinNumber = 0; pinNumber < LDRPINCOUNT; pinNumber++) {
+
+#ifdef DEBUG_LIGHT_RING
+        const auto printSerial = [](int value) { Serial.printf("%3d", value); };
+        if (pinNumber == 35) {
+            printSerial(RAWLDRVALUES[pinNumber]);
+            Serial.println(" ");
+        } else {
+            printSerial(RAWLDRVALUES[pinNumber]);
+            Serial.print(" , ");
+        }
+#endif
+
+        for (int i = 0; i < LDRPINCOUNT; i++) {
+            if (highValues[i] < RAWLDRVALUES[i]) {
+                highValues[i] = RAWLDRVALUES[i];
+            }
+
+            if (RAWLDRVALUES[pinNumber] > LDRThresholds[pinNumber]) {
+                sensorValues.onLine = 2;
+                first_ldrPinout = pinNumber;
+                first_tmpldrangle = LDRBearings[pinNumber];
+
+                calculatedthesholdValue[i] =
+                    minRecordedValue[i] +
+                    (maxRecordedValue[i] - minRecordedValue[i]) * 0.5;
+                if (RAWLDRVALUES[i] > LDRThresholds[i]) {
+                    second_ldrPinout = i;
+                    second_tmpldrangle = LDRBearings[i];
+                    tmpanglediff = abs(LDRBearings[second_ldrPinout] -
+                                       LDRBearings[first_ldrPinout]);
+
+                    if (tmpanglediff > 180) tmpanglediff = 360 - tmpanglediff;
+                    if (tmpanglediff > largestanglediff) {
+                        //(first_tmpldrangle > 180) ? tmprobotangle = 360 -
+                        // first_tmpldrangle : first_tmpldrangle;
+                        largestanglediff = tmpanglediff;
+                        final_ldrPinout1 = first_ldrPinout;
+                        final_ldrPinout2 = second_ldrPinout;
+                    }
+                }
+            }
+        }
+
+        sensorValues.linetrackldr1 = final_ldrPinout1;
+        sensorValues.linetrackldr2 = final_ldrPinout2;
+        if (largestanglediff > 180) largestanglediff = 360 - largestanglediff;
+        if (abs(LDRBearings[final_ldrPinout2] -
+                LDRBearings[final_ldrPinout1]) <= 180) {
+            sensorValues.angleBisector =
+                LDRBearings[final_ldrPinout1] + largestanglediff / 2;
+        } else {
+            sensorValues.angleBisector =
+                LDRBearings[final_ldrPinout2] + largestanglediff / 2;
+        }
+        sensorValues.depthinLine =
+            1.0 - cosf((largestanglediff / 2.0) / 180.0 * PI);
+        //(1.0 - (cosf((90/2)/180 * PI) / 1.0));
+    }
+}
+
 double ballAngleOffset(double distance, double direction) {
     // offset multiplier https://www.desmos.com/calculator/8d2ztl2zf8
     double angleoffset =

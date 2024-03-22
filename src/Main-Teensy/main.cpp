@@ -33,25 +33,6 @@ Execution execution;
 
 // https://www.desmos.com/calculator/5uexflvu3o
 
-float highValues[36] = {5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
-                      5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
-                      5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00,
-                      5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00, 5.00};
-
-double maxRecordedValue[36]{881, 882, 863, 870, 874, 864, 857, 871, 868,
-                            862, 861, 873, 866, 871, 879, 872, 870, 890,
-                            881, 873, 869, 881, 869, 883, 891, 891, 864,
-                            887, 876, 869, 877, 952, 874, 880, 876, 866};
-
-double minRecordedValue[36]{859, 865, 835, 854, 846, 836, 839, 844, 850,
-                            836, 833, 840, 857, 850, 857, 858, 864, 868,
-                            864, 853, 854, 857, 851, 860, 872, 868, 847,
-                            866, 856, 850, 860, 950, 860, 866, 855, 847};
-
-double calculatedthesholdValue[36]{834, 833, 818, 822, 828, 821, 826, 820, 5,
-                                   821, 832, 822, 830, 832, 825, 841, 825, 832,
-                                   838, 834, 829, 841, 843, 840, 850, 846, 848,
-                                   843, 836, 840, 830, 831, 828, 844, 823, 827};
 
 double frontMirrorMapping(double distance) {
     if (distance != 500) {
@@ -238,17 +219,28 @@ int avg_ballinCatchment(int dt, int delay) {
 }
 
 void setup() {
+
+    pinMode(S0, OUTPUT);
+    pinMode(S1, OUTPUT);
+    pinMode(S2, OUTPUT);
+    pinMode(S3, OUTPUT);
+    pinMode(MuxInput1, INPUT);
+    pinMode(MuxInput2, INPUT);
+    pinMode(MuxInput3, INPUT);
+    pinMode(Solenoid_Pin, OUTPUT);
+    digitalWrite(Solenoid_Pin,LOW);
+
     delay(10);
     analogWriteResolution(10);
-    Serial5.begin(115200);
-    Serial3.begin(57600);
-    Serial.begin(9600);
-    L3TeensySerial.setStream(
-        &Serial5); // set serial stream to packet communcation to default serial
-    L3TeensySerial.setPacketHandler(&receiveL3TxData);
+    // Serial5.begin(115200);
+    // Serial3.begin(57600);
+    // Serial.begin(9600);
+    // L3TeensySerial.setStream(
+    //     &Serial5); // set serial stream to packet communcation to default serial
+    // L3TeensySerial.setPacketHandler(&receiveL3TxData);
 
-    L1Serial.setStream(&Serial3);
-    L1Serial.setPacketHandler(&receiveL1TxData);
+    // L1Serial.setStream(&Serial3);
+    // L1Serial.setPacketHandler(&receiveL1TxData);
     // Wire.begin();
     // Wire.setClock(10000);
     // bno.begin(0x4A, Wire);
@@ -271,28 +263,13 @@ double leftVariance = 2;
 double rightVariance = 2;
 
 void loop() {
-#ifdef DEBUG_THRESHOLD_VALUES
-    highValues[sensorValues.linetrackldr2] = sensorValues.linetrackldr1;
-    for (int i = 0; i < 36; i++) {
-        calculatedthesholdValue[i] =
-            minRecordedValue[i] +
-            (maxRecordedValue[i] - minRecordedValue[i]) * 0.5;
-        if (i == 35) {
-            Serial.print(calculatedthesholdValue[i]);
-            Serial.println(" ");
-        } else {
-            Serial.print(calculatedthesholdValue[i]);
-            Serial.print(" , ");
-        }
-    }
-#endif
     // SETUP PHASE
     analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
 
-    L3TeensySerial.update();
-    L1Serial.update();
-    L3TeensySerial.update();
-    L1Serial.update();
+    // L3TeensySerial.update();
+    // L1Serial.update();
+    // L3TeensySerial.update();
+    // L1Serial.update();
     verifyingObjectExistance();
     processLidars();
 
@@ -311,16 +288,28 @@ void loop() {
         sensorValues.ball_relativeposition.y());
     processedValues.ball_relativeposition = ballposition.updatePosition();
 
+    findLine();
+
+    if (solenoid.kick == 1024){
+        digitalWrite(Solenoid_Pin,LOW);
+    }
+    else{
+        digitalWrite(Solenoid_Pin,LOW);
+    }
 
 
-#ifdef DEBUG_LIGHT_RING
-    const auto printSerial = [](int value) { Serial.printf("%3d", value); };
+
+#ifdef DEBUG_THRESHOLD_VALUES
+    highValues[sensorValues.linetrackldr2] = sensorValues.linetrackldr1;
     for (int i = 0; i < 36; i++) {
+        calculatedthesholdValue[i] =
+            minRecordedValue[i] +
+            (maxRecordedValue[i] - minRecordedValue[i]) * 0.5;
         if (i == 35) {
-            printSerial(highValues[i]);
+            Serial.print(calculatedthesholdValue[i]);
             Serial.println(" ");
         } else {
-            printSerial(highValues[i]);
+            Serial.print(calculatedthesholdValue[i]);
             Serial.print(" , ");
         }
     }
@@ -708,8 +697,6 @@ void loop() {
 #endif
 
     movement.drive({localize().x(), localize().y()});
-    //solenoid.kick = 0;
-    byte buf[sizeof(L2TxtoL1payload)];
-    memcpy(buf, &solenoid, sizeof(solenoid));
-    L1Serial.send(buf, sizeof(buf));
+    solenoid.kick = 0;
+    digitalWrite(Solenoid_Pin,LOW);
 }

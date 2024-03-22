@@ -7,6 +7,7 @@
 #include "shared.h"
 #include "util.h"
 
+
 // global variables
 
 extern Solenoid solenoid;
@@ -32,6 +33,12 @@ void attachBrushless();
 double curveAroundBallMultiplier(double angle, double actual_distance, double start_distance);
 void verifyingObjectExistance();
 void processLidars();
+
+//lightring
+void selectMUXChannel(uint8_t channel);
+int readMUXChannel(int index, int muxInput);
+void getValues();
+void findLine();
 
 // functions
 #endif
