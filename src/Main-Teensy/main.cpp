@@ -30,6 +30,7 @@ Solenoid solenoid;
 TruthValues truthValues;
 Servo frontDrib;
 Execution execution;
+LightArray lightArray;
 
 // https://www.desmos.com/calculator/5uexflvu3o
 

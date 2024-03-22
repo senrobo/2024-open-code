@@ -16,6 +16,7 @@ extern Movement movement;
 extern ProcessedValues processedValues;
 extern SensorValues sensorValues;
 extern Execution execution;
+extern LightArray lightArray;
 // subroutines
 static double loopTimeinmicros() {
     timeControl.now = micros();
