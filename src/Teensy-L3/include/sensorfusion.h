@@ -8,8 +8,6 @@
 
 #include "PacketSerial.h"
 #include "kalman.h"
-#include "main.h"
-#include "movement.h"
 #include "shared.h"
 #include "util.h"
 

@@ -5,11 +5,8 @@
 #include <array>
 
 #include "PacketSerial.h"
-#include "ballposition.h"
 #include "config.h"
-#include "kalman.h"
 #include "movement.h"
-#include "sensorfusion.h"
 #include "shared.h"
 
 // hello
@@ -18,8 +15,6 @@
 
 Point KICK_POINT{0, 0};
 
-Sensorfusion sensorfusion;
-BallPosition ballposition;
 PacketSerial L3TeensySerial;
 PacketSerial L1Serial;
 PacketSerial L2toL1Serial;
@@ -31,143 +26,57 @@ TruthValues truthValues;
 Servo frontDrib;
 Execution execution;
 LightArray lightArray;
+ProcessedValues processedValues;
 
 // https://www.desmos.com/calculator/5uexflvu3o
 
-double frontMirrorMapping(double distance) {
-    if (distance != 500) {
-        return (5.39617219 * powf(10, -7) * powf(distance, 5) -
-                1.61827053 * powf(10, -4) * powf(distance, 4) +
-                1.88452202 * powf(10, -2) * powf(distance, 3) -
-                1.04993865 * powf(10, 0) * powf(distance, 2) +
-                2.82679699 * 10 * distance - 2.83240269 * powf(10, 2));
-    } else
-        return 0;
-}
-// 4.32382133e-04 -5.61664545e-02  2.35497365e+00 -6.84446262e-02
-double backMirrorMapping(double distance) {
-    if (distance != 500) {
-        return 3.3654176 * powf(10, -4) * powf(distance, 3) -
-               4.28607791 * powf(10, -2) * powf(distance, 2) +
-               1.92452824 * distance - 1.02719597 * 0.1;
-    } else
-        return 0;
-}
 
-double ballMirrorMapping(double distance) {
-    if (distance != 500) {
-        return (2.72234207 * powf(10, -7) * powf(distance, 5) -
-                7.95782065 * powf(10, -5) * powf(distance, 4) +
-                9.11543654 * powf(10, -3) * powf(distance, 3) -
-                4.96659050 * powf(10, -1) * powf(distance, 2) +
-                1.32335351 * 10 * distance - 1.23966075 * powf(10, 2));
-    } else
-        return 0;
-}
-
-Vector localizeWithOffensiveGoal(double angle) {
-    // Compute a "fake" center vector from the goal vector
-    const Vector realGoalToCenter = {-angle, -90};
-    const auto fakeCenter =
-        sensorValues.yellowgoal_relativeposition + realGoalToCenter;
-    Vector actualCenter = {clipAngleto180degrees(fakeCenter.angle + 180),
-                           fakeCenter.distance};
-    return actualCenter;
-};
 
 void receiveL3TxData(const byte *buf, size_t size) {
     // load payload
     L3Txpayloaf payload;
     // if (size != sizeof(payload)) return;
     memcpy(&payload, buf, sizeof(payload));
-    sensorValues.relativeBearing = -payload.sensorvalues.relativeBearing;
-    sensorValues.bluegoal_relativeposition =
-        payload.sensorvalues.bluegoal_relativeposition;
-    sensorValues.ball_relativeposition =
-        payload.sensorvalues.ball_relativeposition;
-    sensorValues.yellowgoal_relativeposition =
-        payload.sensorvalues.yellowgoal_relativeposition;
+    processedValues.relativeBearing = payload.sensorValues.relativeBearing;
+    processedValues.bluegoal_relativeposition =
+        payload.sensorValues.bluegoal_relativeposition;
+    processedValues.ball_relativeposition =
+        payload.sensorValues.ball_relativeposition;
+    processedValues.yellowgoal_relativeposition =
+        payload.sensorValues.yellowgoal_relativeposition;
+    processedValues.robot_position = payload.sensorValues.robot_position;
+    processedValues.yellowgoal_exists = payload.sensorValues.yellowgoal_exists;
+    processedValues.bluegoal_exists = payload.sensorValues.bluegoal_exists;
+    processedValues.ballExists = payload.sensorValues.ballExists;
 
     for (int i = 0; i < 4; i++) {
-        sensorValues.lidardist[i] = payload.sensorvalues.lidardist[i];
+        processedValues.lidarDistance[i] = payload.sensorValues.lidarDistance[i];
+        processedValues.lidarConfidence[i] = payload.sensorValues.lidarDistance[i];
     }
-    sensorValues.ball_relativeposition.angle += 0;
-    sensorValues.yellowgoal_relativeposition.distance =
-        frontMirrorMapping(sensorValues.yellowgoal_relativeposition.distance);
-    sensorValues.bluegoal_relativeposition.distance =
-        frontMirrorMapping(sensorValues.bluegoal_relativeposition.distance);
-    sensorValues.ball_relativeposition.distance =
-        ballMirrorMapping(sensorValues.ball_relativeposition.distance);
+
     return;
 }
 
 void driveBrushless(double MINPWM, double MAXPWM, int dt = 100) {
     if (MAXPWM >= MINPWM) {
         for (int i = MINPWM; i <= MAXPWM; i = i + 1) {
-            analogWrite(DRIBBLERPWM, i);
+            analogWrite(DRIBBLER_PWM_PIN, i);
             Serial.println(i);
             delay(dt);
         }
     } else {
         for (int i = MAXPWM; i <= MINPWM; i = i - 1) {
-            analogWrite(DRIBBLERPWM, i);
+            analogWrite(DRIBBLER_PWM_PIN, i);
             Serial.println(i);
             delay(dt);
         }
     }
 }
 
-static double loopTimeinMillis() {
-    timeControl.now = millis();
-    timeControl.dt = timeControl.now - timeControl.last;
-    timeControl.last = timeControl.now;
-    return timeControl.dt;
-}
 
-Vector localize() {
-    if ((sensorValues.yellowgoal_relativeposition.distance < 90 &&
-         processedValues.yellowgoal_exists == 1) ||
-        (processedValues.yellowgoal_exists == 1 &&
-         processedValues.bluegoal_exists == 0)) {
-        sensorfusion.updateSensorValues(
-            movement.getmotorValues()[0], movement.getmotorValues()[1],
-            movement.getmotorValues()[2], movement.getmotorValues()[3],
-            sensorValues.lidardist[0], sensorValues.lidardist[2],
-            sensorValues.lidardist[3], sensorValues.lidardist[1],
-            localizeWithOffensiveGoal().x(), localizeWithOffensiveGoal().y());
-        Vector localisation = sensorfusion.updateLocalisation();
-        return localisation;
-    } else if ((sensorValues.bluegoal_relativeposition.distance < 90 &&
-                processedValues.bluegoal_exists == 1) ||
-               (processedValues.bluegoal_exists == 1 &&
-                processedValues.yellowgoal_exists == 0)) {
-        sensorfusion.updateSensorValues(
-            movement.getmotorValues()[0], movement.getmotorValues()[1],
-            movement.getmotorValues()[2], movement.getmotorValues()[3],
-            sensorValues.lidardist[0], sensorValues.lidardist[2],
-            sensorValues.lidardist[3], sensorValues.lidardist[1],
-            localizeWithDefensiveGoal().x(), localizeWithDefensiveGoal().y());
-        Vector localisation = sensorfusion.updateLocalisation();
-        return localisation;
-    } else {
-        sensorfusion.updateSensorValues(
-            movement.getmotorValues()[0], movement.getmotorValues()[1],
-            movement.getmotorValues()[2], movement.getmotorValues()[3],
-            sensorValues.lidardist[0], sensorValues.lidardist[2],
-            sensorValues.lidardist[3], sensorValues.lidardist[1],
-            localizeWithBothGoals().x(), localizeWithBothGoals().y());
-        Vector localisation = sensorfusion.updateLocalisation();
-        return localisation;
-    }
-    // sensorfusion.updateSensorValues(movement.getmotorValues()[0],movement.getmotorValues()[1],movement.getmotorValues()[2],
-    //                                   movement.getmotorValues()[3], 0,
-    //                                   sensorValues.lidardist[3], 0, 0,
-    //                                   localizeWithDefensiveGoal().x(),
-    //                                   localizeWithDefensiveGoal().y());
-}
 
 void movetoPoint(Point destination) {
-    Vector localisation = localize();
+    Vector localisation = Vector::fromPoint(processedValues.robot_position);
     double distance = (localisation - Vector::fromPoint(destination)).distance;
     movement.setconstantVelocity(Velocity::constant{
         movement.applySigmoid(400, 30, (distance) / 20, 1.3)});
@@ -175,7 +84,6 @@ void movetoPoint(Point destination) {
         Direction::movetoPoint{localisation, destination});
 }
 
-ProcessedValues processedValues;
 
 int averageballinCatchment;
 int averageballinCatchmentTime = 0;
@@ -213,7 +121,7 @@ void setup() {
 
     delay(10);
     analogWriteResolution(10);
-    Serial5.begin(115200);
+    Serial5.begin(500000);
 
     Serial.begin(9600);
     L3TeensySerial.setStream(
@@ -243,31 +151,8 @@ double last_bearing = 0;
 void loop() {
     // SETUP PHASE
     analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
-
     L3TeensySerial.update();
     L3TeensySerial.update();
-
-    verifyingObjectExistance();
-    processLidars();
-
-    (processedValues.lidarConfidence[0] == 1) ? frontVariance = 3
-                                              : frontVariance = 400;
-    (processedValues.lidarConfidence[1] == 1) ? rightVariance = 3
-                                              : rightVariance = 400;
-    (processedValues.lidarConfidence[2] == 1) ? backVariance = 3
-                                              : backVariance = 400;
-    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 3
-                                              : leftVariance = 400;
-
-    sensorfusion.updateConstants(frontVariance, backVariance, leftVariance,
-                                 rightVariance, 10, 15);
-
-    double dt = loopTimeinMillis();
-    ballposition.updateConstants(dt / 1000);
-    ballposition.updateSensorMeasurement(
-        sensorValues.ball_relativeposition.x(),
-        sensorValues.ball_relativeposition.y());
-    processedValues.ball_relativeposition = ballposition.updatePosition();
 
     findLine();
 
@@ -296,13 +181,12 @@ void loop() {
 #endif
 
 #ifdef DEFENCE_BOT_CODE
-
-    if (sensorValues.onLine == 1) {
-        movement.setconstantDirection(
-            Direction::constant{sensorValues.bluegoal_relativeposition.angle});
-        movement.setconstantVelocity(Velocity::constant{400});
-        movement.setconstantBearing(
-            Bearing::constant{last_bearing, sensorValues.relativeBearing});
+  
+  
+    if (sensorValues.onLine == 1){
+        movement.setconstantDirection(Direction::constant{processedValues.bluegoal_relativeposition.angle});
+        movement.setconstantVelocity(Velocity::constant{500});
+        movement.setconstantBearing(Bearing::constant{last_bearing, processedValues.relativeBearing});
     }
 
     else if (sensorValues.onLine == 2 && processedValues.ballExists == 1) {
@@ -318,20 +202,6 @@ void loop() {
             processedValues.defenceRobotDepthinLine = sensorValues.depthinLine;
         }
 
-        // if (true){
-        //   movement.setlinetrackDirection(Direction::linetrack{processedValues.defenceRobotDepthinLine,
-        //                           processedValues.defenceRobotAngleBisector,
-        //                           DEFENCE_DEPTH_IN_LINE, true});
-        //   //movement.setconstantDirection(Direction::constant{90});
-        //   // double progress = (sensorValues.bluegoal_relativeposition.angle
-        //   -
-        //   //                   (processedValues.ball_relativeposition.angle -
-        //   180))/90;
-        //   //
-        //   movement.setconstantVelocity(Velocity::constant{movement.applySigmoid(300,100,
-        //   progress, DEFENCE_ACCELERATION_MULTIPLIER)});
-        //   movement.setconstantVelocity(Velocity::constant{400});
-        // }
         if (processedValues.ballExists == 0) {
             movement.setconstantVelocity(Velocity::constant{0});
             movement.setconstantDirection(Direction::constant{0});
@@ -341,32 +211,36 @@ void loop() {
         } else if (lightArray.RAWLDRVALUES[18] > lightArray.LDRThresholds[18]) {
             movement.setconstantVelocity(Velocity::constant{500});
             movement.setconstantDirection(Direction::constant{180});
-        } else if (clipAngleto360degrees(
-                       sensorValues.bluegoal_relativeposition.angle) >
+
+        }
+        else if (clipAngleto360degrees(
+                       processedValues.bluegoal_relativeposition.angle) >
+
                        clipAngleto360degrees(
                            processedValues.ball_relativeposition.angle - 180) &&
-                   sensorValues.lidardist[3] >=
+                   processedValues.lidarDistance[3] >=
                        DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
             movement.setlinetrackDirection(
                 Direction::linetrack{processedValues.defenceRobotDepthinLine,
                                      processedValues.defenceRobotAngleBisector,
                                      DEFENCE_DEPTH_IN_LINE, false});
             double progress =
-                (sensorValues.bluegoal_relativeposition.angle -
+                (processedValues.bluegoal_relativeposition.angle -
                  (processedValues.ball_relativeposition.angle - 180)) /
                 90;
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
-                    500, 300, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
+                    600, 500, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
             // movement.setconstantVelocity(Velocity::constant{400});
         }
 
         else if (clipAngleto360degrees(
-                     sensorValues.bluegoal_relativeposition.angle) <
+                     processedValues.bluegoal_relativeposition.angle) <
                      clipAngleto360degrees(
                          processedValues.ball_relativeposition.angle - 180) &&
-                 sensorValues.lidardist[1] >=
+                 processedValues.lidarDistance[1] >=
                      DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
+                    
             movement.setlinetrackDirection(
                 Direction::linetrack{processedValues.defenceRobotDepthinLine,
                                      processedValues.defenceRobotAngleBisector,
@@ -374,34 +248,37 @@ void loop() {
 
             double progress =
                 (-clipAngleto360degrees(
-                     sensorValues.bluegoal_relativeposition.angle) +
+                     processedValues.bluegoal_relativeposition.angle) +
                  clipAngleto360degrees(
                      processedValues.ball_relativeposition.angle - 180)) /
                 90;
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
-                    500, 300, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
+                    600, 500, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
             // movement.setconstantVelocity(Velocity::constant{400});
         }
 
-        else if (sensorValues.lidardist[3] <
-                 DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
-            movement.setconstantVelocity(Velocity::constant{0});
-            movement.setconstantDirection(Direction::constant{0});
-        } else if (sensorValues.lidardist[1] <
-                   DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
-            movement.setconstantVelocity(Velocity::constant{0});
-            movement.setconstantDirection(Direction::constant{0});
-        }
+        // else if (sensorValues.lidardist[3] <
+        //          DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
+        //     movement.setconstantVelocity(Velocity::constant{0});
+        //     movement.setconstantDirection(Direction::constant{0});
+        // } else if (sensorValues.lidardist[1] <
+        //            DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
+        //     movement.setconstantVelocity(Velocity::constant{0});
+        //     movement.setconstantDirection(Direction::constant{0});
+        // }
 
         movement.setconstantBearing(Bearing::constant{
             0, -clipAngleto180degrees(
                    processedValues.defenceRobotAngleBisector + 180)});
 
-        last_bearing = sensorValues.relativeBearing;
+        
+        last_bearing = processedValues.relativeBearing;
+
         // movement.setconstantBearing(Bearing::constant{0.0,sensorValues.relativeBearing});
 
-    } else {
+    } 
+    else {
         movement.setconstantVelocity(Velocity::constant{0});
         movement.setconstantBearing(Bearing::constant{0, 0});
     }
@@ -640,28 +517,28 @@ void loop() {
     printDouble(Serial, sensorValues.ballinCatchment, 3, 0);
     // L3 Data
     Serial.print(" | bearing: ");
-    printDouble(Serial, sensorValues.relativeBearing, 3, 1);
+    printDouble(Serial, processedValues.relativeBearing, 3, 1);
     Serial.print(" | frontLidar: ");
-    printDouble(Serial, sensorValues.lidardist[0], 3, 0);
+    printDouble(Serial, processedValues.lidarDistance[0], 3, 0);
     Serial.print(" | rightLidar: ");
-    printDouble(Serial, sensorValues.lidardist[1], 3, 0);
+    printDouble(Serial, processedValues.lidarDistance[1], 3, 0);
     Serial.print(" | backLidar: ");
-    printDouble(Serial, sensorValues.lidardist[2], 3, 0);
+    printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
     Serial.print(" | leftLidar: ");
-    printDouble(Serial, sensorValues.lidardist[3], 3, 0);
+    printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
     Serial.print(" | attackGoalAngle: ");
-    printDouble(Serial, sensorValues.yellowgoal_relativeposition.angle, 3, 1);
+    printDouble(Serial, processedValues.yellowgoal_relativeposition.angle, 3, 1);
     Serial.print(" | attackGoalDist: ");
-    printDouble(Serial, sensorValues.yellowgoal_relativeposition.distance, 3,
+    printDouble(Serial, processedValues.yellowgoal_relativeposition.distance, 3,
                 1);
     Serial.print(" | defenceGoalAngle: ");
-    printDouble(Serial, sensorValues.bluegoal_relativeposition.angle, 3, 1);
+    printDouble(Serial, processedValues.bluegoal_relativeposition.angle, 3, 1);
     Serial.print(" | defenceGoalDist: ");
-    printDouble(Serial, sensorValues.bluegoal_relativeposition.distance, 3, 1);
+    printDouble(Serial, processedValues.bluegoal_relativeposition.distance, 3, 1);
     Serial.print(" | ballAngle: ");
-    printDouble(Serial, sensorValues.ball_relativeposition.angle, 3, 1);
+    printDouble(Serial, processedValues.ball_relativeposition.angle, 3, 1);
     Serial.print(" | ballDist: ");
-    printDouble(Serial, sensorValues.ball_relativeposition.distance, 3, 1);
+    printDouble(Serial, processedValues.ball_relativeposition.distance, 3, 1);
     // processed Values
     Serial.print(" | ballExistence: ");
     printDouble(Serial, processedValues.ballExists, 1, 1);
@@ -669,29 +546,13 @@ void loop() {
     printDouble(Serial, processedValues.yellowgoal_exists, 1, 1);
     Serial.print(" | defenceGoal Existence: ");
     printDouble(Serial, processedValues.bluegoal_exists, 1, 1);
-    Serial.print(" | frontlidarConf: ");
-    printDouble(Serial, processedValues.lidarConfidence[0], 1, 0);
-    Serial.print(" | rightlidarConf: ");
-    printDouble(Serial, processedValues.lidarConfidence[1], 1, 0);
-    Serial.print(" | backlidarConf: ");
-    printDouble(Serial, processedValues.lidarConfidence[2], 1, 0);
-    Serial.print(" | leflidarConf: ");
-    printDouble(Serial, processedValues.lidarConfidence[3], 1, 0);
-    Serial.print(" | processedfrontLidar: ");
-    printDouble(Serial, processedValues.lidarDistance[0], 3, 0);
-    Serial.print(" | processedrightLidar: ");
-    printDouble(Serial, processedValues.lidarDistance[1], 3, 0);
-    Serial.print(" | processedbackLidar: ");
-    printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
-    Serial.print(" | processedleftLidar: ");
-    printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
     // Location
     Serial.print(" | X_position: ");
-    printDouble(Serial, localize().x(), 3, 0);
+    printDouble(Serial, processedValues.robot_position.x, 3, 0);
     Serial.print(" | Y_position: ");
-    printDouble(Serial, localize().y(), 3, 0);
+    printDouble(Serial, processedValues.robot_position.y, 3, 0);
     Serial.println("");
 #endif
 
-    movement.drive({localize().x(), localize().y()});
+    movement.drive({processedValues.robot_position.x, processedValues.robot_position.y});
 }
