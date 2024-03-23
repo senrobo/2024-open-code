@@ -3,6 +3,7 @@
 
 #include "vector.h"
 
+
 struct TimeControl {
     double now = 0;
     double last = 0;

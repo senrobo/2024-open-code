@@ -13,8 +13,6 @@
 
 #define TEENSY
 
-
-
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
@@ -70,12 +68,14 @@ void getBNOreading() {
         if (bno.getSensorEventID() ==
             SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR) {
             sensorValues.relativeBearing =
-                bno.getGyroIntegratedRVK()* 180.0; // Convert yaw / heading to degree
+                bno.getGyroIntegratedRVK()
+                * 180.0; // Convert yaw / heading to degree
         }
     }
 }
 
 void setReports(void) {
+
     if (bno.enableGyroIntegratedRotationVector()== true) {
         // Serial.println(F("Gryo Integrated Rotation vector enabled"));
         // Serial.println(F("Output in form i, j, k, real, gyroX, gyroY,
