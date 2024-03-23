@@ -7,18 +7,13 @@
 
 ``` bash
 ├──  include
-│  ├── 󰂺 README
 │  ├──  shared.h
 │  ├──  util.h
 │  └──  vector.h
 ├──  src
-│  ├──  l1-light
-│  │  └──  main.cpp
-│  ├──  l2-motor
-│  │  └──  main.cpp
 │  ├──  l3-lidar
 │  │  └──  main.cpp
-│  ├──  l3-master
+│  ├──  Main-Teensy
 │  │  ├──  basic
 │  │  │  ├──  ballposition.cpp
 │  │  │  ├──  kalman.cpp
@@ -35,6 +30,8 @@
 │  │  ├──  config.h
 │  │  ├──  main.cpp
 │  │  └──  subroutines.cpp
+│  ├──  Teensy-L3
+│  │  └──  main.cpp
 │  ├──  util.cpp
 │  └──  vector.cpp
 ├──  .clang-format
