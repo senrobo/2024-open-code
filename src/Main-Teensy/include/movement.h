@@ -72,7 +72,7 @@ class Movement {
 
     // PID Controllera
     PIDController bearingController =
-        PIDController(0.0, -500, 500, 4, 40, 0.0, infinity(), 1, 0.2);
+        PIDController(0.0, -700, 700, 6, 40, 0.0, infinity(), 1, 0.2);
 
     PIDController directionController =
         PIDController(0.0, -90, 90, 1.5, 0, 0, 1.0, 1, 0.2);
