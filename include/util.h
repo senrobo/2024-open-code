@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <Arduino.h>
+#include <Wire.h>
 
 #define RADIANS_TO_DEGREES
 
