@@ -19,7 +19,7 @@
 #define BL_MULTIPLIER 1
 #define BR_MULTIPLIER 1
 
-#define ROBOT1
+#define ROBOT2
 
 #define SIN34 0.55919290F
 #define SIN56 0.82903757F
@@ -47,7 +47,7 @@ void Movement::initialize() {
     // changing PWM resolution
     analogWriteResolution(10);
 
-    analogWriteFrequency(FL_PWM_PIN, 146484);
+    analogWriteFrequency(FL_PWM_PIN, 146484); 
     analogWriteFrequency(BL_PWM_PIN, 146484);
     analogWriteFrequency(FR_PWM_PIN, 146484);
     analogWriteFrequency(BR_PWM_PIN, 146484);
@@ -136,32 +136,31 @@ void Movement::drive(Point robotPosition) {
         bearingController.advance(clipAngleto360degrees(_actualbearing));
     }
 
-
     double x = sind(_targetdirection);
     double y = cosd(_targetdirection);
 
-
     
-    
+    #ifdef ATTACK_BOT_CODE
     if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
         double deccel = constrain(X_AXIS_SLOWDOWN_SPEED - ((robotPosition.x - X_AXIS_SLOWDOWN_START) / 
                                  (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) * X_AXIS_SLOWDOWN_SPEED),0, 1000);
 
-        x = constrain(x, -600.0, deccel);
+        x = constrain(x, -700.0, deccel);
     } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
         double deccel = constrain(X_AXIS_SLOWDOWN_SPEED - ((robotPosition.x + X_AXIS_SLOWDOWN_START) / 
                                  (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *  X_AXIS_SLOWDOWN_SPEED), -1000, 0);
-        x = constrain(x, deccel, 600);
+        x = constrain(x, deccel, 700);
     }
     if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
     double deccel = constrain(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y - Y_AXIS_SLOWDOWN_START) / 
                                  (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED), 0, 1000);
-        y = constrain(y, -600.0,deccel);
+        y = constrain(y, -700.0,deccel);
     } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START) {
     double deccel = constrain(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y + Y_AXIS_SLOWDOWN_START) / 
                                  (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED), -1000, 0);
-        y = constrain(y, deccel, 600);
+        y = constrain(y, deccel, 700);
     }
+    #endif
 
     const auto transformspeed = [this](double velocityDirection,
                                        double angularComponent) {
@@ -179,16 +178,17 @@ void Movement::drive(Point robotPosition) {
     double BLSpeed = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
                      BL_MULTIPLIER;
 
-    if (FLSpeed < 300 && FLSpeed > -300){
+
+    if (FLSpeed < 340 && FLSpeed > -340){
         FLSpeed = 0;
     }
-    if (FRSpeed < 300 && FRSpeed > -300){
+    if (FRSpeed < 340 && FRSpeed > -340){
         FRSpeed = 0;
     }
-    if (BLSpeed < 300 && BLSpeed > -300){
+    if (BLSpeed < 340 && BLSpeed > -340){
         BLSpeed = 0;
     }
-    if (BRSpeed < 300 && BRSpeed > -300){
+    if (BRSpeed < 340 && BRSpeed > -340){
         BRSpeed = 0;
     }
 
@@ -218,16 +218,16 @@ void Movement::drive(Point robotPosition) {
     digitalWriteFast(FR_IN1_PIN, FRSpeed > 0 ? HIGH : LOW);
     digitalWriteFast(FR_IN2_PIN, FRSpeed > 0 ? LOW : HIGH);
 
-    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? HIGH : LOW);
-    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? HIGH : LOW);
 
     digitalWriteFast(BL_IN1_PIN, BLSpeed > 0 ? HIGH : LOW);
     digitalWriteFast(BL_IN2_PIN, BLSpeed > 0 ? LOW : HIGH);
 
-    analogWrite(FL_PWM_PIN, constrain(abs(FLSpeed), -500, 500));
-    analogWrite(FR_PWM_PIN, constrain(abs(FRSpeed), -500, 500));
-    analogWrite(BL_PWM_PIN, constrain(abs(BLSpeed), -500, 500));
-    analogWrite(BR_PWM_PIN, constrain(abs(BRSpeed), -500, 500));
+    analogWrite(FL_PWM_PIN, constrain(abs(FLSpeed), -700, 700));
+    analogWrite(FR_PWM_PIN, constrain(abs(FRSpeed), -700, 700));
+    analogWrite(BL_PWM_PIN, constrain(abs(BLSpeed), -700, 700));
+    analogWrite(BR_PWM_PIN, constrain(abs(BRSpeed), -700, 700));
 #endif
 #ifdef DEBUG_MOVEMENT
     const auto printSerial = [](double value) {

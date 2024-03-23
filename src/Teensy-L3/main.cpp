@@ -7,6 +7,9 @@
 #include <Wire.h>
 #include <iostream>
 #include <math.h>
+#include "kalman.h"
+#include "sensorfusion.h"
+#include "ballposition.h"
 
 #define TEENSY
 
@@ -15,41 +18,19 @@
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
+Sensorfusion sensorfusion;
+BallPosition ballposition;
+
+
 PacketSerial CameraTeensySerial;
 PacketSerial TeensyTeensySerial;
 PacketSerial LidarTeensySerial;
 BNO08x bno;
 
 
-struct sensorValues {
-    int relativeBearing;
-    Vector yellowgoal_relativeposition;
-    Vector bluegoal_relativeposition;
-    Vector ball_relativeposition;
-    int LidarDist[4];
-};
 
-struct teensytoTeensyTxPayload {
-    sensorValues sensorvalues;
-};
-
-struct CameraTxData {
-    double values[6];
-};
-
-struct CameraTxPayload {
-    CameraTxData cameraTxData;
-};
-
-struct LidarTxData {
-    int distance[4];
-};
-
-struct LidarTxPayload {
-    LidarTxData lidarTxData;
-};
-
-sensorValues sensorvalues;
+SensorValues sensorValues;
+ProcessedValues processedValues;
 
 void receiveLidarTxData(const byte *buf, size_t size) {
     // load payload
@@ -57,7 +38,7 @@ void receiveLidarTxData(const byte *buf, size_t size) {
     // if (size != sizeof(payload)) return;
     memcpy(&payload, buf, sizeof(payload));
     for (int i = 0; i < 4; i++) {
-        sensorvalues.LidarDist[i] = payload.lidarTxData.distance[i];
+        sensorValues.lidardist[i] = payload.lidarTxData.distance[i];
     }
     return;
 }
@@ -67,17 +48,18 @@ void receiveCameraTxData(const byte *buf, size_t size) {
     CameraTxPayload payload;
     // if (size != sizeof(payload)) return;
     memcpy(&payload, buf, sizeof(payload));
-    sensorvalues.bluegoal_relativeposition.angle =
+    sensorValues.bluegoal_relativeposition.angle =
         payload.cameraTxData.values[0];
-    sensorvalues.bluegoal_relativeposition.distance =
+    sensorValues.bluegoal_relativeposition.distance =
         payload.cameraTxData.values[1];
-    sensorvalues.yellowgoal_relativeposition.angle =
+    sensorValues.yellowgoal_relativeposition.angle =
         payload.cameraTxData.values[2];
-    sensorvalues.yellowgoal_relativeposition.distance =
+    sensorValues.yellowgoal_relativeposition.distance =
         payload.cameraTxData.values[3];
-    sensorvalues.ball_relativeposition.angle = payload.cameraTxData.values[4];
-    sensorvalues.ball_relativeposition.distance =
+    sensorValues.ball_relativeposition.angle = payload.cameraTxData.values[4];
+    sensorValues.ball_relativeposition.distance =
         payload.cameraTxData.values[5];
+    sensorValues.ball_relativeposition.distance = ballMirrorMapping(sensorValues.ball_relativeposition.distance);
     return;
 }
 
@@ -87,14 +69,13 @@ void getBNOreading() {
     if (bno.getSensorEvent() == true) {
         if (bno.getSensorEventID() ==
             SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR) {
-            sensorvalues.relativeBearing =
+            sensorValues.relativeBearing =
                 bno.getGyroIntegratedRVK()* 180.0; // Convert yaw / heading to degree
         }
     }
 }
 
 void setReports(void) {
-    Serial.println("Setting desired reports");
     if (bno.enableGyroIntegratedRotationVector()== true) {
         // Serial.println(F("Gryo Integrated Rotation vector enabled"));
         // Serial.println(F("Output in form i, j, k, real, gyroX, gyroY,
@@ -104,9 +85,62 @@ void setReports(void) {
     }
 }
 
+
+Vector localize() {
+    if ((sensorValues.yellowgoal_relativeposition.distance < 90 &&
+         processedValues.yellowgoal_exists == 1) ||
+        (processedValues.yellowgoal_exists == 1 &&
+         processedValues.bluegoal_exists == 0)) {
+        sensorfusion.updateSensorValues(
+            0, 0,
+            0, 0,
+            sensorValues.lidardist[0], sensorValues.lidardist[2],
+            sensorValues.lidardist[3], sensorValues.lidardist[1],
+            localizeWithOffensiveGoal().x(), localizeWithOffensiveGoal().y());
+        Vector localisation = sensorfusion.updateLocalisation();
+        return localisation;
+    } else if ((sensorValues.bluegoal_relativeposition.distance < 90 &&
+                processedValues.bluegoal_exists == 1) ||
+               (processedValues.bluegoal_exists == 1 &&
+                processedValues.yellowgoal_exists == 0)) {
+        sensorfusion.updateSensorValues(
+            0, 0,
+            0, 0,
+            sensorValues.lidardist[0], sensorValues.lidardist[2],
+            sensorValues.lidardist[3], sensorValues.lidardist[1],
+            localizeWithDefensiveGoal().x(), localizeWithDefensiveGoal().y());
+        Vector localisation = sensorfusion.updateLocalisation();
+        return localisation;
+    } else {
+        sensorfusion.updateSensorValues(
+            0, 0,
+            0, 0,
+            sensorValues.lidardist[0], sensorValues.lidardist[2],
+            sensorValues.lidardist[3], sensorValues.lidardist[1],
+            localizeWithBothGoals().x(), localizeWithBothGoals().y());
+        Vector localisation = sensorfusion.updateLocalisation();
+        return localisation;
+    }
+    // sensorfusion.updateSensorValues(movement.getmotorValues()[0],movement.getmotorValues()[1],movement.getmotorValues()[2],
+    //                                   movement.getmotorValues()[3], 0,
+    //                                   sensorValues.lidardist[3], 0, 0,
+    //                                   localizeWithDefensiveGoal().x(),
+    //                                   localizeWithDefensiveGoal().y());
+}
+
+void verifyingObjectExistance() {
+    processedValues.ballExists =
+        (processedValues.ball_relativeposition.distance == 0) ? 0 : 1;
+    processedValues.bluegoal_exists =
+        (sensorValues.bluegoal_relativeposition.distance == 0) ? 0 : 1;
+    processedValues.yellowgoal_exists =
+        (sensorValues.yellowgoal_relativeposition.distance == 0) ? 0 : 1;
+}
+
+
 void setup() {
-    Serial1.begin(115200);
-    Serial5.begin(115200);
+    Serial1.begin(500000);
+    Serial5.begin(500000);
     Serial4.begin(115200);
     Serial.begin(9600);
     Wire.begin();
@@ -130,34 +164,88 @@ void setup() {
 }
 
 int counter = 0;
+double frontVariance = 2;
+double backVariance = 2;
+double leftVariance = 2;
+double rightVariance = 2;
 
 void loop() {
 
+    //setup
+    double dt = loopTimeinMillis();
+    verifyingObjectExistance();
+    processLidars();
     setReports();
     getBNOreading();
     CameraTeensySerial.update();
     LidarTeensySerial.update();
-    Serial.print(sensorvalues.relativeBearing);
-    Serial.print(", ");
-    Serial.print(sensorvalues.bluegoal_relativeposition.distance);
-    Serial.print(", ");
-        Serial.print(sensorvalues.LidarDist[0]);
-    Serial.print(", ");
-    Serial.print(sensorvalues.LidarDist[1]);
-    Serial.print(", ");
-        Serial.print(sensorvalues.LidarDist[2]);
-    Serial.print(", ");
-    Serial.print(sensorvalues.LidarDist[3]);
-    Serial.print(", ");
-    Serial.println(" ");
+
+    processedValues.bluegoal_relativeposition = sensorValues.bluegoal_relativeposition;
+    processedValues.bluegoal_relativeposition.distance = frontMirrorMapping(processedValues.bluegoal_relativeposition.distance);
+    processedValues.yellowgoal_relativeposition = sensorValues.yellowgoal_relativeposition;
+    processedValues.yellowgoal_relativeposition.distance = frontMirrorMapping(processedValues.yellowgoal_relativeposition.distance);
+    processedValues.relativeBearing = -sensorValues.relativeBearing;
+
+    (processedValues.lidarConfidence[0] == 1) ? frontVariance = 3 : frontVariance = 400;
+    (processedValues.lidarConfidence[1] == 1) ? rightVariance = 3 : rightVariance = 400;
+    (processedValues.lidarConfidence[2] == 1) ? backVariance = 3 : backVariance = 400;
+    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 3 : leftVariance = 400;
+
+    sensorfusion.updateConstants(frontVariance, backVariance, leftVariance,
+                                rightVariance, 10, 15);
+
+    ballposition.updateConstants(dt / 1000);
+    ballposition.updateSensorMeasurement(
+        sensorValues.ball_relativeposition.x(),
+        sensorValues.ball_relativeposition.y());
+    processedValues.ball_relativeposition = ballposition.updatePosition();
+
+    Vector robotPosition = localize();
+    processedValues.robot_position = {robotPosition.x(),robotPosition.y()};
+
+    Serial.print(" | bearing: ");
+    printDouble(Serial, processedValues.relativeBearing, 3, 1);
+    Serial.print(" | frontLidar: ");
+    printDouble(Serial, processedValues.lidarDistance[0], 3, 0);
+    Serial.print(" | rightLidar: ");
+    printDouble(Serial, processedValues.lidarDistance[1], 3, 0);
+    Serial.print(" | backLidar: ");
+    printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
+    Serial.print(" | leftLidar: ");
+    printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
+    Serial.print(" | attackGoalAngle: ");
+    printDouble(Serial, processedValues.yellowgoal_relativeposition.angle, 3, 1);
+    Serial.print(" | attackGoalDist: ");
+    printDouble(Serial, processedValues.yellowgoal_relativeposition.distance, 3,
+                1);
+    Serial.print(" | defenceGoalAngle: ");
+    printDouble(Serial, processedValues.bluegoal_relativeposition.angle, 3, 1);
+    Serial.print(" | defenceGoalDist: ");
+    printDouble(Serial, processedValues.bluegoal_relativeposition.distance, 3, 1);
+    Serial.print(" | ballAngle: ");
+    printDouble(Serial, processedValues.ball_relativeposition.angle, 3, 1);
+    Serial.print(" | ballDist: ");
+    printDouble(Serial, processedValues.ball_relativeposition.distance, 3, 1);
+    // processed Values
+    Serial.print(" | ballExistence: ");
+    printDouble(Serial, processedValues.ballExists, 1, 1);
+    Serial.print(" | attackGoal Existence: ");
+    printDouble(Serial, processedValues.yellowgoal_exists, 1, 1);
+    Serial.print(" | defenceGoal Existence: ");
+    printDouble(Serial, processedValues.bluegoal_exists, 1, 1);
+    // Location
+    Serial.print(" | X_position: ");
+    printDouble(Serial, processedValues.robot_position.x, 3, 0);
+    Serial.print(" | Y_position: ");
+    printDouble(Serial, processedValues.robot_position.y, 3, 0);
+    Serial.println("");
+
+    
+
 
     byte buf[sizeof(teensytoTeensyTxPayload)];
-    memcpy(buf, &sensorvalues, sizeof(sensorvalues));
+    memcpy(buf, &processedValues, sizeof(processedValues));
     TeensyTeensySerial.send(buf, sizeof(buf));
-
-    // printHighestValue(1);
-
-    // autoTuneThreshold(5000, 0.7);
 
     counter++;
 }

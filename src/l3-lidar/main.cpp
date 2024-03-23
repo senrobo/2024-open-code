@@ -69,27 +69,27 @@ void setup() {
 }
 
 void loop() {
-    // i2cscanner();
-    for (int i = 0; i < 4; i++) {
-        if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
-        {
-            if (i < 3) {
-                Serial.print(" Dist: ");
-                Serial.print(tfDist[i]);
-            }
+    i2cscanner();
+    // for (int i = 0; i < 4; i++) {
+    //     if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
+    //     {
+    //         if (i < 3) {
+    //             Serial.print(" Dist: ");
+    //             Serial.print(tfDist[i]);
+    //         }
 
-            else if (i == 3) {
-                Serial.print(" Dist: ");
-                Serial.println(tfDist[i]);
-            }
-            esp32lidardata.distance[i] = tfDist[i];
-        }
+    //         else if (i == 3) {
+    //             Serial.print(" Dist: ");
+    //             Serial.println(tfDist[i]);
+    //         }
+    //         esp32lidardata.distance[i] = tfDist[i];
+    //     }
 
-        else {
-            esp32lidardata.distance[i] = 0;
-            tflI2C[i].printStatus();
-        }
-    }
+    //     else {
+    //         esp32lidardata.distance[i] = 0;
+    //         tflI2C[i].printStatus();
+    //     }
+    // }
     delay(20);
 
     byte buf[sizeof(lidarTxPayload)];
