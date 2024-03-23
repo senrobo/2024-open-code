@@ -11,7 +11,6 @@
 #include "shared.h"
 #include "util.h"
 
-
 void selectMUXChannel(uint8_t channel) {
     digitalWrite(S0, channel & 1);
     digitalWrite(S1, (channel >> 1) & 1);
@@ -79,7 +78,7 @@ void findLine() {
 
     int final_ldrPinout1 = 0;
     int final_ldrPinout2 = 0;
-    sensorValues.onLine = 1; 
+    sensorValues.onLine = 1;
 
     for (int pinNumber = 0; pinNumber < LDRPINCOUNT; pinNumber++) {
 
@@ -99,19 +98,23 @@ void findLine() {
                 lightArray.highValues[i] = lightArray.RAWLDRVALUES[i];
             }
 
-            if (lightArray.RAWLDRVALUES[pinNumber] > lightArray.LDRThresholds[pinNumber]) {
+            if (lightArray.RAWLDRVALUES[pinNumber] >
+                lightArray.LDRThresholds[pinNumber]) {
                 sensorValues.onLine = 2;
                 first_ldrPinout = pinNumber;
                 first_tmpldrangle = lightArray.LDRBearings[pinNumber];
 
                 lightArray.calculatedthesholdValue[i] =
                     lightArray.minRecordedValue[i] +
-                    (lightArray.maxRecordedValue[i] - lightArray.minRecordedValue[i]) * 0.5;
+                    (lightArray.maxRecordedValue[i] -
+                     lightArray.minRecordedValue[i]) *
+                        0.5;
                 if (lightArray.RAWLDRVALUES[i] > lightArray.LDRThresholds[i]) {
                     second_ldrPinout = i;
                     second_tmpldrangle = lightArray.LDRBearings[i];
-                    tmpanglediff = abs(lightArray.LDRBearings[second_ldrPinout] -
-                                       lightArray.LDRBearings[first_ldrPinout]);
+                    tmpanglediff =
+                        abs(lightArray.LDRBearings[second_ldrPinout] -
+                            lightArray.LDRBearings[first_ldrPinout]);
 
                     if (tmpanglediff > 180) tmpanglediff = 360 - tmpanglediff;
                     if (tmpanglediff > largestanglediff) {
@@ -136,7 +139,8 @@ void findLine() {
             sensorValues.angleBisector =
                 lightArray.LDRBearings[final_ldrPinout2] + largestanglediff / 2;
         }
-        sensorValues.angleBisector = clipAngleto360degrees(360 - sensorValues.angleBisector);
+        sensorValues.angleBisector =
+            clipAngleto360degrees(360 - sensorValues.angleBisector);
         sensorValues.depthinLine =
             1.0 - cosf((largestanglediff / 2.0) / 180.0 * PI);
         //(1.0 - (cosf((90/2)/180 * PI) / 1.0));

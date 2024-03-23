@@ -119,47 +119,56 @@ void Movement::setBearingSettings(double minV, double maxV, double KP,
 void Movement::drive(Point robotPosition) {
     bearingController.updateSetpoint(_targetbearing);
 
-    if (_targetbearing <= 90 && _targetbearing >= -90){
+    if (_targetbearing <= 90 && _targetbearing >= -90) {
         _movingbearing =
             bearingController.advance(clipAngleto180degrees(_actualbearing));
-    }
-    else if (_targetbearing > 90 && _targetbearing <= 135 ){
+    } else if (_targetbearing > 90 && _targetbearing <= 135) {
         _movingbearing =
             bearingController.advance(clipAngleto180degrees(_actualbearing));
-    }
-    else if (_targetbearing < -90 && _targetbearing >= -135 ){
+    } else if (_targetbearing < -90 && _targetbearing >= -135) {
         _movingbearing =
             bearingController.advance(clipAngleto180degrees(_actualbearing));
+    } else {
+        _movingbearing =
+            bearingController.advance(clipAngleto360degrees(_actualbearing));
     }
-    else{
-    _movingbearing =
-        bearingController.advance(clipAngleto360degrees(_actualbearing));
-    }
-
 
     double x = sind(_targetdirection);
     double y = cosd(_targetdirection);
 
-
-    
-    
     if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
-        double deccel = constrain(X_AXIS_SLOWDOWN_SPEED - ((robotPosition.x - X_AXIS_SLOWDOWN_START) / 
-                                 (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) * X_AXIS_SLOWDOWN_SPEED),0, 1000);
+        double deccel =
+            constrain(X_AXIS_SLOWDOWN_SPEED -
+                          ((robotPosition.x - X_AXIS_SLOWDOWN_START) /
+                           (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
+                           X_AXIS_SLOWDOWN_SPEED),
+                      0, 1000);
 
         x = constrain(x, -600.0, deccel);
     } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
-        double deccel = constrain(X_AXIS_SLOWDOWN_SPEED - ((robotPosition.x + X_AXIS_SLOWDOWN_START) / 
-                                 (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *  X_AXIS_SLOWDOWN_SPEED), -1000, 0);
+        double deccel =
+            constrain(X_AXIS_SLOWDOWN_SPEED -
+                          ((robotPosition.x + X_AXIS_SLOWDOWN_START) /
+                           (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
+                           X_AXIS_SLOWDOWN_SPEED),
+                      -1000, 0);
         x = constrain(x, deccel, 600);
     }
     if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
-    double deccel = constrain(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y - Y_AXIS_SLOWDOWN_START) / 
-                                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED), 0, 1000);
-        y = constrain(y, -600.0,deccel);
+        double deccel =
+            constrain(Y_AXIS_SLOWDOWN_SPEED -
+                          ((robotPosition.y - Y_AXIS_SLOWDOWN_START) /
+                           (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) *
+                           Y_AXIS_SLOWDOWN_SPEED),
+                      0, 1000);
+        y = constrain(y, -600.0, deccel);
     } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START) {
-    double deccel = constrain(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y + Y_AXIS_SLOWDOWN_START) / 
-                                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED), -1000, 0);
+        double deccel =
+            constrain(Y_AXIS_SLOWDOWN_SPEED -
+                          ((robotPosition.y + Y_AXIS_SLOWDOWN_START) /
+                           (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) *
+                           Y_AXIS_SLOWDOWN_SPEED),
+                      -1000, 0);
         y = constrain(y, deccel, 600);
     }
 
@@ -179,19 +188,10 @@ void Movement::drive(Point robotPosition) {
     double BLSpeed = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
                      BL_MULTIPLIER;
 
-    if (FLSpeed < 300 && FLSpeed > -300){
-        FLSpeed = 0;
-    }
-    if (FRSpeed < 300 && FRSpeed > -300){
-        FRSpeed = 0;
-    }
-    if (BLSpeed < 300 && BLSpeed > -300){
-        BLSpeed = 0;
-    }
-    if (BRSpeed < 300 && BRSpeed > -300){
-        BRSpeed = 0;
-    }
-
+    if (FLSpeed < 300 && FLSpeed > -300) { FLSpeed = 0; }
+    if (FRSpeed < 300 && FRSpeed > -300) { FRSpeed = 0; }
+    if (BLSpeed < 300 && BLSpeed > -300) { BLSpeed = 0; }
+    if (BRSpeed < 300 && BRSpeed > -300) { BRSpeed = 0; }
 
 #ifdef ROBOT1
     digitalWriteFast(FL_IN1_PIN, FLSpeed > 0 ? LOW : HIGH);
@@ -249,8 +249,10 @@ void Movement::drive(Point robotPosition) {
     Serial.print(" | YPosition: ");
     printSerial(robotPosition.y);
     Serial.print(" | Y: ");
-    printSerial(Y_AXIS_SLOWDOWN_SPEED - ((robotPosition.y - Y_AXIS_SLOWDOWN_START) / 
-                                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) * Y_AXIS_SLOWDOWN_SPEED));
+    printSerial(Y_AXIS_SLOWDOWN_SPEED -
+                ((robotPosition.y - Y_AXIS_SLOWDOWN_START) /
+                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) *
+                 Y_AXIS_SLOWDOWN_SPEED));
     Serial.println(" ");
 
 #endif

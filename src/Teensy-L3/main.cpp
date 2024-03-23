@@ -10,8 +10,6 @@
 
 #define TEENSY
 
-
-
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
@@ -19,7 +17,6 @@ PacketSerial CameraTeensySerial;
 PacketSerial TeensyTeensySerial;
 PacketSerial LidarTeensySerial;
 BNO08x bno;
-
 
 struct sensorValues {
     int relativeBearing;
@@ -88,14 +85,15 @@ void getBNOreading() {
         if (bno.getSensorEventID() ==
             SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR) {
             sensorvalues.relativeBearing =
-                bno.getGyroIntegratedRVK()* 180.0; // Convert yaw / heading to degree
+                bno.getGyroIntegratedRVK() *
+                180.0; // Convert yaw / heading to degree
         }
     }
 }
 
 void setReports(void) {
     Serial.println("Setting desired reports");
-    if (bno.enableGyroIntegratedRotationVector()== true) {
+    if (bno.enableGyroIntegratedRotationVector() == true) {
         // Serial.println(F("Gryo Integrated Rotation vector enabled"));
         // Serial.println(F("Output in form i, j, k, real, gyroX, gyroY,
         // gyroZ"));
@@ -141,11 +139,11 @@ void loop() {
     Serial.print(", ");
     Serial.print(sensorvalues.bluegoal_relativeposition.distance);
     Serial.print(", ");
-        Serial.print(sensorvalues.LidarDist[0]);
+    Serial.print(sensorvalues.LidarDist[0]);
     Serial.print(", ");
     Serial.print(sensorvalues.LidarDist[1]);
     Serial.print(", ");
-        Serial.print(sensorvalues.LidarDist[2]);
+    Serial.print(sensorvalues.LidarDist[2]);
     Serial.print(", ");
     Serial.print(sensorvalues.LidarDist[3]);
     Serial.print(", ");
