@@ -15,27 +15,27 @@
 
 #define STRATEGY1
 
+#define ROBOT1
 
-
-//#define DEBUG_EVERYTHING
+#define DEBUG_EVERYTHING
 //#define DEBUG_LIGHT_RING
 //#define DEBUG_THRESHOLD_VALUES
-// #define DEBUG_MOVEMENT
+//#define DEBUG_MOVEMENT
 
 
-#define DEFENCE_BOT_CODE
+//#define DEFENCE_BOT_CODE
 // print Serial
 // #define DEBUG_DEFENCE_BOT
 // defence Bot settings
 #define DEFENCE_DEPTH_IN_LINE 1 // from 0 to 2
 // https://www.desmos.com/calculator/btpwnfdqyq
 #define DEFENCE_ACCELERATION_MULTIPLIER                                        \
-    1.8 // smaller the value, the acceleration is slower(speeds up or slows down
+    4 // smaller the value, the acceleration is slower(speeds up or slows down
         // slower)
 
 #define DEFENCE_STOP_LINE_TRACK_LIDAR_DIST 40
 
-// #define ATTACK_BOT_CODE
+#define ATTACK_BOT_CODE
 //  stealth strategy
 #define KICK_BEARING_ERROR             20
 #define X_LOCALISATION_ERROR_THRESHOLD 20
@@ -48,7 +48,7 @@
 #define DEGREE_MULTIPLIER 20
 
 #define DRIBBLER_LOWER_LIMIT 128
-#define DRIBBLER_UPPER_LIMIT 230
+#define DRIBBLER_UPPER_LIMIT 198
 
 // #define DEBUG_LIDAR
 

@@ -19,14 +19,13 @@
 #define BL_MULTIPLIER 1
 #define BR_MULTIPLIER 1
 
-#define ROBOT2
+
 
 #define SIN34 0.55919290F
 #define SIN56 0.82903757F
 #define COS34 0.82903757F
 #define COS56 0.55919290F
 
-#define ROBOT2t
 
 Movement::Movement(){};
 
@@ -195,10 +194,10 @@ void Movement::drive(Point robotPosition) {
                      BL_MULTIPLIER;
 
 
-    if (FLSpeed < 300 && FLSpeed > -300) { FLSpeed = 0; }
-    if (FRSpeed < 300 && FRSpeed > -300) { FRSpeed = 0; }
-    if (BLSpeed < 300 && BLSpeed > -300) { BLSpeed = 0; }
-    if (BRSpeed < 300 && BRSpeed > -300) { BRSpeed = 0; }
+    // if (FLSpeed < 50 && FLSpeed > -50) { FLSpeed = 0; }
+    // if (FRSpeed < 50 && FRSpeed > -50) { FRSpeed = 0; }
+    // if (BLSpeed < 50 && BLSpeed > -50) { BLSpeed = 0; }
+    // if (BRSpeed < 50 && BRSpeed > -50) { BRSpeed = 0; }
 
 
 #ifdef ROBOT1

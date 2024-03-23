@@ -39,14 +39,14 @@ void receiveL3TxData(const byte *buf, size_t size) {
     memcpy(&payload, buf, sizeof(payload));
     processedValues.relativeBearing = payload.sensorValues.relativeBearing;
     processedValues.bluegoal_relativeposition =
-        payload.sensorValues.bluegoal_relativeposition;
+        payload.sensorValues.yellowgoal_relativeposition;
     processedValues.ball_relativeposition =
         payload.sensorValues.ball_relativeposition;
     processedValues.yellowgoal_relativeposition =
-        payload.sensorValues.yellowgoal_relativeposition;
+        payload.sensorValues.bluegoal_relativeposition;
     processedValues.robot_position = payload.sensorValues.robot_position;
-    processedValues.yellowgoal_exists = payload.sensorValues.yellowgoal_exists;
-    processedValues.bluegoal_exists = payload.sensorValues.bluegoal_exists;
+    processedValues.yellowgoal_exists = payload.sensorValues.bluegoal_exists;
+    processedValues.bluegoal_exists = payload.sensorValues.yellowgoal_exists;
     processedValues.ballExists = payload.sensorValues.ballExists;
 
     for (int i = 0; i < 4; i++) {
@@ -107,6 +107,8 @@ int avg_ballinCatchment(int dt, int delay) {
     }
 }
 
+
+
 void setup() {
 
     pinMode(S0, OUTPUT);
@@ -149,6 +151,12 @@ double rightVariance = 2;
 double last_bearing = 0;
 
 void loop() {
+    dt = loopTimeinMillis()/1000;
+
+    for (int i = 0; i < 4; i++){
+        processedValues.lidarDistance[i] = 400;
+    }
+
     // SETUP PHASE
     analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
     L3TeensySerial.update();
@@ -169,7 +177,7 @@ void loop() {
         lightArray.calculatedthesholdValue[i] =
             lightArray.minRecordedValue[i] +
             (lightArray.maxRecordedValue[i] - lightArray.minRecordedValue[i]) *
-                0.3;
+                0.1;
         if (i == 35) {
             Serial.print(lightArray.calculatedthesholdValue[i]);
             Serial.println(" ");
@@ -181,7 +189,6 @@ void loop() {
 #endif
 
 #ifdef DEFENCE_BOT_CODE
-  
   
     if (sensorValues.onLine == 1){
         movement.setconstantDirection(Direction::constant{processedValues.bluegoal_relativeposition.angle});
@@ -230,7 +237,7 @@ void loop() {
                 90;
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
-                    600, 500, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
+                    600, 0, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
             // movement.setconstantVelocity(Velocity::constant{400});
         }
 
@@ -254,8 +261,10 @@ void loop() {
                 90;
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
-                    600, 500, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
+                    600, 0, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
+
             // movement.setconstantVelocity(Velocity::constant{400});
+            //Serial.print("kj");
         }
 
         // else if (sensorValues.lidardist[3] <
@@ -278,10 +287,6 @@ void loop() {
         // movement.setconstantBearing(Bearing::constant{0.0,sensorValues.relativeBearing});
 
     } 
-    else {
-        movement.setconstantVelocity(Velocity::constant{0});
-        movement.setconstantBearing(Bearing::constant{0, 0});
-    }
 
     // movement.setconstantBearing(Bearing::constant{0.0,0});
 
@@ -351,8 +356,7 @@ void loop() {
 
 #ifdef ATTACK_BOT_CODE
 
-    truthValues.bearingtoField =
-        clipAngleto180degrees(sensorValues.relativeBearing);
+
     double direction =
         clipAngleto180degrees(processedValues.ball_relativeposition.angle);
 
@@ -384,7 +388,7 @@ void loop() {
         movement.setconstantVelocity(Velocity::constant{350});
     }
 
-    else if (avg_ballinCatchment(dt, 10) >= 720) { // 720
+    else if (sensorValues.ballinCatchment >= 720) { // 720
 
         if (execution.kickComplete == 1) {
             execution.setStrategy = 1;
@@ -395,12 +399,13 @@ void loop() {
         } else if (execution.strategy == 1) {
             execution.targetBearing = 0;
         }
+        execution.targetBearing = 0;
         // Serial.println(processedValues.ball_relativeposition.distance);
         // Serial.println(sensorValues.ball_relativeposition.distance);
         Vector yellow_goalactualposition = {
-            sensorValues.yellowgoal_relativeposition.angle +
-                sensorValues.relativeBearing,
-            sensorValues.yellowgoal_relativeposition.distance};
+            processedValues.yellowgoal_relativeposition.angle +
+                processedValues.relativeBearing,
+            processedValues.yellowgoal_relativeposition.distance};
         // Serial.print(direction);
         // Serial.print(", ");
         // Serial.println(processedValues.ball_relativeposition.distance);
@@ -419,6 +424,9 @@ void loop() {
             //  Serial.print(processedValues.ball_relativeposition.distance);
             //  Serial.print("h");
 
+            Serial.print("k");
+            execution.targetBearing = 0;
+
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
                     500, 300,
@@ -433,11 +441,11 @@ void loop() {
                                 processedValues.ball_relativeposition.angle) +
                 processedValues.ball_relativeposition.angle});
         }
-    } else if (avg_ballinCatchment(dt, 10) <= 720) { // 720
+    } else if (sensorValues.ballinCatchment <= 720) { // 720
 
     #ifdef STRATEGY1
 
-        if (localizeWithOffensiveGoal().distance > 60) {
+        if (Vector::fromPoint(processedValues.robot_position).distance > 60) {
             // analogWrite(DRIBBLER_PWM, 14);
             solenoid.kick = 1024;
             movement.setconstantVelocity(Velocity::constant{300});
@@ -445,8 +453,8 @@ void loop() {
             execution.setStrategy == 1;
         } else {
             execution.targetBearing =
-                sensorValues.relativeBearing -
-                sensorValues.yellowgoal_relativeposition.angle;
+                processedValues.relativeBearing -
+                processedValues.yellowgoal_relativeposition.angle;
             movement.setconstantVelocity(Velocity::constant{400});
             movement.setconstantDirection(Direction::constant{0});
         }
@@ -485,7 +493,7 @@ void loop() {
     #endif
     }
     movement.setconstantBearing(Bearing::constant{
-        execution.targetBearing, sensorValues.relativeBearing});
+        execution.targetBearing, processedValues.relativeBearing});
 
 #endif
     // if (distance < 10) solenoid.kick = 255;
@@ -515,6 +523,8 @@ void loop() {
     printDouble(Serial, sensorValues.linetrackldr2, 3, 0);
     Serial.print(" | catchment: ");
     printDouble(Serial, sensorValues.ballinCatchment, 3, 0);
+     Serial.print(" | catchmentAverage: ");
+    printDouble(Serial, avg_ballinCatchment(dt, 10), 3, 0);
     // L3 Data
     Serial.print(" | bearing: ");
     printDouble(Serial, processedValues.relativeBearing, 3, 1);

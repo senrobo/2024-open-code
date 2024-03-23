@@ -80,6 +80,9 @@ void findLine() {
     sensorValues.onLine = 1;
 
     for (int pinNumber = 0; pinNumber < LDRPINCOUNT; pinNumber++) {
+        if (lightArray.highValues[pinNumber] < lightArray.RAWLDRVALUES[pinNumber]) {
+                lightArray.highValues[pinNumber] = lightArray.RAWLDRVALUES[pinNumber];
+        }
 
 #ifdef DEBUG_LIGHT_RING
         const auto printSerial = [](int value) { Serial.printf("%3d", value); };
@@ -91,23 +94,13 @@ void findLine() {
             Serial.print(" , ");
         }
 #endif
+        if (lightArray.RAWLDRVALUES[pinNumber] >
+            lightArray.LDRThresholds[pinNumber]) {
+            sensorValues.onLine = 2;
+            first_ldrPinout = pinNumber;
+            first_tmpldrangle = lightArray.LDRBearings[pinNumber];
 
-        for (int i = 0; i < LDRPINCOUNT; i++) {
-            if (lightArray.highValues[i] < lightArray.RAWLDRVALUES[i]) {
-                lightArray.highValues[i] = lightArray.RAWLDRVALUES[i];
-            }
-
-            if (lightArray.RAWLDRVALUES[pinNumber] >
-                lightArray.LDRThresholds[pinNumber]) {
-                sensorValues.onLine = 2;
-                first_ldrPinout = pinNumber;
-                first_tmpldrangle = lightArray.LDRBearings[pinNumber];
-
-                lightArray.calculatedthesholdValue[i] =
-                    lightArray.minRecordedValue[i] +
-                    (lightArray.maxRecordedValue[i] -
-                     lightArray.minRecordedValue[i]) *
-                        0.5;
+            for (int i = pinNumber; i < LDRPINCOUNT; i++) {
                 if (lightArray.RAWLDRVALUES[i] > lightArray.LDRThresholds[i]) {
                     second_ldrPinout = i;
                     second_tmpldrangle = lightArray.LDRBearings[i];
@@ -125,6 +118,8 @@ void findLine() {
                     }
                 }
             }
+
+
         }
 
         sensorValues.linetrackldr1 = final_ldrPinout1;
