@@ -6,35 +6,46 @@
 ## Directory Structure
 
 ``` bash
+├──  .vscode
+│  ├──  c_cpp_properties.json
+│  ├──  extensions.json
+│  ├──  launch.json
+│  └──  settings.json
 ├──  include
 │  ├──  shared.h
 │  ├──  util.h
 │  └──  vector.h
 ├──  src
+│  ├──  l2-tnsy
+│  │  ├──  basic
+│  │  │  ├──  movement.cpp
+│  │  │  └──  pid.cpp
+│  │  ├──  include
+│  │  │  ├──  main.h
+│  │  │  ├──  movement.h
+│  │  │  └──  pid.h
+│  │  ├──  config.h
+│  │  ├──  main.cpp
+│  │  └──  subroutines.cpp
 │  ├──  l3-lidar
 │  │  └──  main.cpp
-│  ├──  Main-Teensy
+│  ├──  l3-tnsy
 │  │  ├──  basic
 │  │  │  ├──  ballposition.cpp
 │  │  │  ├──  kalman.cpp
-│  │  │  ├──  movement.cpp
-│  │  │  ├──  pid.cpp
 │  │  │  └──  sensorfusion.cpp
 │  │  ├──  include
 │  │  │  ├──  ballposition.h
 │  │  │  ├──  kalman.h
 │  │  │  ├──  main.h
-│  │  │  ├──  movement.h
-│  │  │  ├──  pid.h
 │  │  │  └──  sensorfusion.h
 │  │  ├──  config.h
 │  │  ├──  main.cpp
 │  │  └──  subroutines.cpp
-│  ├──  Teensy-L3
-│  │  └──  main.cpp
 │  ├──  util.cpp
 │  └──  vector.cpp
 ├──  .clang-format
+├──  .DS_Store
 ├──  .gitignore
 ├──  platformio.ini
 └──  README.md
