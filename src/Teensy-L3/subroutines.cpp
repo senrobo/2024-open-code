@@ -33,24 +33,24 @@ double ballMirrorMapping(double distance) {
 
 
 Vector localizeWithOffensiveGoal() {
-    const Vector realGoalToCenter = {-180, 113.5};
+    const Vector realGoalToCenter = {0, 113.5};
     const Vector yellow_goalactualposition = {
         sensorValues.yellowgoal_relativeposition.angle -
             sensorValues.relativeBearing,
         sensorValues.yellowgoal_relativeposition.distance};
-    const auto fakeCenter = yellow_goalactualposition + realGoalToCenter;
-    Vector actualCenter = {clipAngleto180degrees(fakeCenter.angle - 180),
+    const auto fakeCenter = - yellow_goalactualposition + realGoalToCenter;
+    Vector actualCenter = {clipAngleto180degrees(fakeCenter.angle),
                            fakeCenter.distance};
     return actualCenter;
 };
 Vector localizeWithDefensiveGoal() {
-    const Vector realGoalToCenter = {0, 113.5};
+    const Vector  realGoalToCenter = {180, 113.5};
     const Vector blue_goalactualposition = {
         sensorValues.bluegoal_relativeposition.angle -
             sensorValues.relativeBearing,
         sensorValues.bluegoal_relativeposition.distance};
-    const auto fakeCenter = blue_goalactualposition + realGoalToCenter;
-    Vector actualCenter = {clipAngleto180degrees(fakeCenter.angle - 180),
+    const auto fakeCenter = - blue_goalactualposition + realGoalToCenter;
+    Vector actualCenter = {clipAngleto180degrees(fakeCenter.angle),
                            fakeCenter.distance};
     return actualCenter;
 };

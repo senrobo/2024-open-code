@@ -144,7 +144,7 @@ void findLine() {
 double ballAngleOffset(double distance, double direction) {
     // offset multiplier https://www.desmos.com/calculator/8d2ztl2zf8
     double angleoffset =
-        constrain(direction * 1, -90, 90) *
+        constrain(direction * 0.9, -90, 90) *
         fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
     return angleoffset;
 };

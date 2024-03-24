@@ -13,7 +13,7 @@
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
-#define STRATEGY1
+#define STRATEGY2
 
 #define ROBOT1
 
@@ -37,15 +37,15 @@
 
 #define ATTACK_BOT_CODE
 //  stealth strategy
-#define KICK_BEARING_ERROR             20
-#define X_LOCALISATION_ERROR_THRESHOLD 20
-#define Y_LOCALISATION_ERROR_THRESHOLD 20
+#define KICK_BEARING_ERROR             5
+#define X_LOCALISATION_ERROR_THRESHOLD 10
+#define Y_LOCALISATION_ERROR_THRESHOLD 10
 
 // curve around ball settings
 // https://www.desmos.com/calculator/atvzoxtoxn
-#define OFFSET_MULTIPLIER 0.02F // variable a in desmos
+#define OFFSET_MULTIPLIER 0.04F // variable a in desmos
 #define START_OFFSET      26    // variable d
-#define DEGREE_MULTIPLIER 20
+#define DEGREE_MULTIPLIER 5
 
 #define DRIBBLER_LOWER_LIMIT 128
 #define DRIBBLER_UPPER_LIMIT 198
@@ -65,7 +65,7 @@
 
 // dribbler settings
 #define DRIBBLER_PWM_PIN        0
-#define BRUSHLESS_DEFAULT_SPEED 0 // 220
+#define BRUSHLESS_DEFAULT_SPEED 220 // 220
 
 // lidars processing settings
 #define X_AXIS_LIDARS_POSITIONAL_OFFSET                                        \

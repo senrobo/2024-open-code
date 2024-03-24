@@ -2,7 +2,7 @@
 #define CONFIG_H
 
 
-
+#define BLUE_GOAL_ATTACK
 
 
 // lidars processing settings

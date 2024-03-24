@@ -10,6 +10,7 @@
 #include "kalman.h"
 #include "sensorfusion.h"
 #include "ballposition.h"
+#include "config.h"
 
 #define TEENSY
 
@@ -46,6 +47,8 @@ void receiveCameraTxData(const byte *buf, size_t size) {
     CameraTxPayload payload;
     // if (size != sizeof(payload)) return;
     memcpy(&payload, buf, sizeof(payload));
+
+    #ifdef YELLOW_GOAL_ATTACK
     sensorValues.bluegoal_relativeposition.angle =
         payload.cameraTxData.values[0];
     sensorValues.bluegoal_relativeposition.distance =
@@ -54,10 +57,23 @@ void receiveCameraTxData(const byte *buf, size_t size) {
         payload.cameraTxData.values[2];
     sensorValues.yellowgoal_relativeposition.distance =
         payload.cameraTxData.values[3];
+    #endif
+    #ifdef BLUE_GOAL_ATTACK
+    sensorValues.yellowgoal_relativeposition.angle =
+        payload.cameraTxData.values[0];
+    sensorValues.yellowgoal_relativeposition.distance =
+        payload.cameraTxData.values[1];
+    sensorValues.bluegoal_relativeposition.angle =
+        payload.cameraTxData.values[2];
+    sensorValues.bluegoal_relativeposition.distance =
+        payload.cameraTxData.values[3];
+    #endif
     sensorValues.ball_relativeposition.angle = payload.cameraTxData.values[4];
     sensorValues.ball_relativeposition.distance =
         payload.cameraTxData.values[5];
     sensorValues.ball_relativeposition.distance = ballMirrorMapping(sensorValues.ball_relativeposition.distance);
+    sensorValues.bluegoal_relativeposition.distance = frontMirrorMapping(sensorValues.bluegoal_relativeposition.distance);
+    sensorValues.yellowgoal_relativeposition.distance = frontMirrorMapping(sensorValues.yellowgoal_relativeposition.distance);
     return;
 }
 
@@ -98,6 +114,7 @@ Vector localize() {
             sensorValues.lidardist[3], sensorValues.lidardist[1],
             localizeWithOffensiveGoal().x(), localizeWithOffensiveGoal().y());
         Vector localisation = sensorfusion.updateLocalisation();
+        Serial.print("f");
         return localisation;
     } else if ((sensorValues.bluegoal_relativeposition.distance < 90 &&
                 processedValues.bluegoal_exists == 1) ||
@@ -110,6 +127,7 @@ Vector localize() {
             sensorValues.lidardist[3], sensorValues.lidardist[1],
             localizeWithDefensiveGoal().x(), localizeWithDefensiveGoal().y());
         Vector localisation = sensorfusion.updateLocalisation();
+        Serial.print("b");
         return localisation;
     } else {
         sensorfusion.updateSensorValues(
@@ -119,6 +137,7 @@ Vector localize() {
             sensorValues.lidardist[3], sensorValues.lidardist[1],
             localizeWithBothGoals().x(), localizeWithBothGoals().y());
         Vector localisation = sensorfusion.updateLocalisation();
+        Serial.print("fb");
         return localisation;
     }
     // sensorfusion.updateSensorValues(movement.getmotorValues()[0],movement.getmotorValues()[1],movement.getmotorValues()[2],
@@ -170,21 +189,22 @@ double leftVariance = 2;
 double rightVariance = 2;
 
 void loop() {
-
-    //setup
     double dt = loopTimeinMillis();
-    verifyingObjectExistance();
-    processLidars();
-    setReports();
-    getBNOreading();
     CameraTeensySerial.update();
     LidarTeensySerial.update();
+    setReports();
+    getBNOreading();
 
     processedValues.bluegoal_relativeposition = sensorValues.bluegoal_relativeposition;
-    processedValues.bluegoal_relativeposition.distance = frontMirrorMapping(processedValues.bluegoal_relativeposition.distance);
+    processedValues.bluegoal_relativeposition.distance = sensorValues.bluegoal_relativeposition.distance;
     processedValues.yellowgoal_relativeposition = sensorValues.yellowgoal_relativeposition;
-    processedValues.yellowgoal_relativeposition.distance = frontMirrorMapping(processedValues.yellowgoal_relativeposition.distance);
+    processedValues.yellowgoal_relativeposition.distance = sensorValues.yellowgoal_relativeposition.distance;
     processedValues.relativeBearing = -sensorValues.relativeBearing;
+
+    //setup
+
+    verifyingObjectExistance();
+    processLidars();
 
     (processedValues.lidarConfidence[0] == 1) ? frontVariance = 3 : frontVariance = 400;
     (processedValues.lidarConfidence[1] == 1) ? rightVariance = 3 : rightVariance = 400;
@@ -213,6 +233,16 @@ void loop() {
     printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
     Serial.print(" | leftLidar: ");
     printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
+
+    Serial.print(" | frontLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[0], 3, 0);
+    Serial.print(" | rightLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[1], 3, 0);
+    Serial.print(" | backLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[2], 3, 0);
+    Serial.print(" | leftLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[3], 3, 0);
+    
     Serial.print(" | attackGoalAngle: ");
     printDouble(Serial, processedValues.yellowgoal_relativeposition.angle, 3, 1);
     Serial.print(" | attackGoalDist: ");

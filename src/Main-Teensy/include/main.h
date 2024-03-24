@@ -179,6 +179,7 @@ struct ProcessedValues {
     Point robot_position;
     double defenceRobotAngleBisector;
     double defenceRobotDepthinLine;
+    double averageCatchmentValues;
 };
 
 struct TruthValues {
