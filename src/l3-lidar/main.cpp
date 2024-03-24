@@ -30,6 +30,33 @@ typedef struct lidarTxPayload {
     lidardata esp32lidardata;
 } lidarTxPayload;
 
+void i2cscanner() {
+    byte error, address;
+    int nDevices = 0;
+    // foresight of future problems ig
+    Serial.println("Scanning...");
+
+    for (address = 1; address < 127; address++) {
+        Wire.beginTransmission(address);
+        error = Wire.endTransmission();
+
+        if (error == 0) {
+            Serial.print("i2c device found at address 0x");
+            if (address < 16) Serial.print("0");
+            Serial.print(address, HEX); // ASCII-encoded hexadecimal
+            Serial.println();
+            nDevices++;
+        } else if (error == 4) {
+            Serial.print("Unknown error at address 0x");
+            if (address < 16) Serial.print("0");
+            Serial.println(address, HEX);
+        }
+    }
+    nDevices == 0 ? Serial.println("No i2c devices found\n")
+                  : Serial.println("Scanning completed\n");
+    delay(1000);
+}
+
 void setup() {
     Serial.begin(115200);
     MySerial0.begin(115200, SERIAL_8N1, -1, -1);
@@ -43,26 +70,26 @@ void setup() {
 
 void loop() {
     i2cscanner();
-    // for (int i = 0; i < 4; i++) {
-    //     if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
-    //     {
-    //         if (i < 3) {
-    //             Serial.print(" Dist: ");
-    //             Serial.print(tfDist[i]);
-    //         }
+    for (int i = 0; i < 4; i++) {
+        if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
+        {
+            if (i < 3) {
+                Serial.print(" Dist: ");
+                Serial.print(tfDist[i]);
+            }
 
-    //         else if (i == 3) {
-    //             Serial.print(" Dist: ");
-    //             Serial.println(tfDist[i]);
-    //         }
-    //         esp32lidardata.distance[i] = tfDist[i];
-    //     }
+            else if (i == 3) {
+                Serial.print(" Dist: ");
+                Serial.println(tfDist[i]);
+            }
+            esp32lidardata.distance[i] = tfDist[i];
+        }
 
-    //     else {
-    //         esp32lidardata.distance[i] = 0;
-    //         tflI2C[i].printStatus();
-    //     }
-    // }
+        else {
+            esp32lidardata.distance[i] = 0;
+            tflI2C[i].printStatus();
+        }
+    }
     delay(20);
 
     byte buf[sizeof(lidarTxPayload)];
