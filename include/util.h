@@ -16,7 +16,7 @@ double acosd(double angle);
 void printDouble(Stream &serial, double value, uint8_t integerPlaces,
                  uint8_t decimalPlaces);
 
-void i2cscanner(Stream &serial, TwoWire wire);
+void i2cscanner();
 
 void wipeEEPROM();
 

@@ -65,7 +65,7 @@ void processLidars() {
     double y_frontrelativetofield = 0;
     double y_backrelativetofield = 0;
     Point CameraPosition;
-
+    
     for (int i = 0; i < 4; i++) {
         processedValues.lidarDistance[i] =
             sensorValues.lidardist[i] + LIDARSMEASUREMENTOFFSET;

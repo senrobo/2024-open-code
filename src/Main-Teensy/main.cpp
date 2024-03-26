@@ -52,7 +52,7 @@ void receiveL3TxData(const byte *buf, size_t size) {
 
     for (int i = 0; i < 4; i++) {
         processedValues.lidarDistance[i] = payload.sensorValues.lidarDistance[i];
-        processedValues.lidarConfidence[i] = payload.sensorValues.lidarDistance[i];
+        processedValues.lidarConfidence[i] = payload.sensorValues.lidarConfidence[i];
     }
 
     return;
@@ -80,7 +80,7 @@ void movetoPoint(Point destination) {
     Vector localisation = Vector::fromPoint(processedValues.robot_position);
     double distance = (localisation - Vector::fromPoint(destination)).distance;
     movement.setconstantVelocity(Velocity::constant{
-        movement.applySigmoid(400, 200, (distance) / 20, 1)});
+        movement.applySigmoid(400, 250, (distance) / 20, 0.9)});
     movement.setmovetoPointDirection(
         Direction::movetoPoint{localisation, destination});
 }
@@ -153,14 +153,9 @@ double last_bearing = 0;
 
 void loop() {
     dt = loopTimeinMillis();
-
-    for (int i = 0; i < 4; i++){
-        processedValues.lidarDistance[i] = 400;
-    }
     processedValues.averageCatchmentValues = avg_ballinCatchment(dt,10);
 
     // SETUP PHASE
-    analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
     L3TeensySerial.update();
     L3TeensySerial.update();
 
@@ -171,6 +166,13 @@ void loop() {
     } else {
         digitalWrite(Solenoid_Pin, LOW);
     }
+    if (processedValues.ball_relativeposition.distance > 50){
+        analogWrite(DRIBBLER_PWM_PIN, 180);
+    }
+    else{
+        analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
+    }
+
 
 #ifdef DEBUG_THRESHOLD_VALUES
     lightArray.highValues[sensorValues.linetrackldr2] =
@@ -179,7 +181,7 @@ void loop() {
         lightArray.calculatedthesholdValue[i] =
             lightArray.minRecordedValue[i] +
             (lightArray.maxRecordedValue[i] - lightArray.minRecordedValue[i]) *
-                0.1;
+                0.3;
         if (i == 35) {
             Serial.print(lightArray.calculatedthesholdValue[i]);
             Serial.println(" ");
@@ -384,13 +386,18 @@ void loop() {
     }
 
     // action
+    // if (true){
+    //     execution.setStrategy = 0;
+    //     movement.setconstantVelocity(Velocity::constant{300});
+    //     movement.setconstantDirection(Direction::constant{0});
+    // }
     if (sensorValues.onLine == 2) {
         movement.setconstantDirection(Direction::constant{
             clipAngleto180degrees(180 + sensorValues.angleBisector)});
         movement.setconstantVelocity(Velocity::constant{350});
     }
 
-    else if (processedValues.averageCatchmentValues >= 700) { // 720
+    else if (processedValues.averageCatchmentValues >= CATCHMENT_THRESHOLD) { // 720
         execution.kickStrategySequence = 0;
 
         if (execution.kickComplete == 1) {
@@ -428,11 +435,11 @@ void loop() {
             //  Serial.print("h");
 
             Serial.print("k");
-            execution.targetBearing = -90;
+            execution.targetBearing = 0;
 
             movement.setconstantVelocity(
                 Velocity::constant{movement.applySigmoid(
-                    300, 250,
+                    500, 300,
                     curveAroundBallMultiplier(
                         processedValues.ball_relativeposition.angle,
                         processedValues.ball_relativeposition.distance - 20,
@@ -444,11 +451,31 @@ void loop() {
                                 processedValues.ball_relativeposition.angle) +
                 processedValues.ball_relativeposition.angle});
         }
-    } else if (processedValues.averageCatchmentValues <= 700) { // 720
+    } else if (processedValues.averageCatchmentValues <= CATCHMENT_THRESHOLD) { // 720
 
     #ifdef STRATEGY1
 
-        if (Vector::fromPoint(processedValues.robot_position).distance > 60) {
+        if (processedValues.lidarDistance[0] < 30 && processedValues.lidarConfidence[0] == 0
+            || millis() - execution.lastavoidTime < 1000){
+            if (processedValues.lidarDistance[0] < 30 
+                && processedValues.lidarConfidence[0] == 0){
+                    execution.lastavoidTime = millis();
+                    execution.setAvoidBotDirection == true;
+                }
+            
+            if (processedValues.robot_position.x <=0){
+                movement.setconstantDirection(Direction::constant{-100});
+                movement.setconstantVelocity(Velocity::constant{600});
+            }
+            else{
+                movement.setconstantDirection(Direction::constant{100});
+                movement.setconstantVelocity(Velocity::constant{600});
+            }
+            execution.targetBearing =
+            processedValues.relativeBearing +
+            processedValues.yellowgoal_relativeposition.angle;
+        }
+        else if (Vector::fromPoint(processedValues.robot_position).distance > 60) {
             // analogWrite(DRIBBLER_PWM, 14);
             execution.targetBearing =
                 processedValues.relativeBearing +
@@ -483,9 +510,9 @@ void loop() {
                        Y_LOCALISATION_ERROR_THRESHOLD &&
                    processedValues.robot_position.y - KICK_POINT.y >
                        -Y_LOCALISATION_ERROR_THRESHOLD) {
-            execution.targetBearing = 2*(processedValues.relativeBearing +
+            execution.targetBearing = (processedValues.relativeBearing +
                 processedValues.yellowgoal_relativeposition.angle);
-            movement.setBearingSettings(-200,200,2,0,0);
+            movement.setBearingSettings(-300,300,2,0,0);
             movetoPoint(KICK_POINT);
             
             execution.kickStrategySequence = 1;
@@ -494,8 +521,11 @@ void loop() {
         else {
             Vector localisation = {processedValues.robot_position.x, processedValues.robot_position.y};
             movetoPoint(KICK_POINT);
+                execution.targetBearing = (processedValues.relativeBearing +
+            processedValues.yellowgoal_relativeposition.angle);
+            movement.setBearingSettings(-300,300,2,0,0);
             //movement.setBearingSettings(-100,100,1,0,0);
-            execution.targetBearing = -90;
+    
         }
     #endif
     }
@@ -543,11 +573,21 @@ void loop() {
     printDouble(Serial, processedValues.lidarDistance[2], 3, 0);
     Serial.print(" | leftLidar: ");
     printDouble(Serial, processedValues.lidarDistance[3], 3, 0);
+
+    Serial.print(" | frontLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[0], 3, 0);
+    Serial.print(" | rightLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[1], 3, 0);
+    Serial.print(" | backLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[2], 3, 0);
+    Serial.print(" | leftLidarConf: ");
+    printDouble(Serial, processedValues.lidarConfidence[3], 3, 0);
     Serial.print(" | attackGoalAngle: ");
     printDouble(Serial, processedValues.yellowgoal_relativeposition.angle, 3, 1);
     Serial.print(" | attackGoalDist: ");
     printDouble(Serial, processedValues.yellowgoal_relativeposition.distance, 3,
                 1);
+    
     Serial.print(" | defenceGoalAngle: ");
     printDouble(Serial, processedValues.bluegoal_relativeposition.angle, 3, 1);
     Serial.print(" | defenceGoalDist: ");

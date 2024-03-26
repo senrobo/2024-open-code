@@ -31,7 +31,7 @@ void Sensorfusion::updateConstants(double frontVariance, double backVariance,
     // assuming error +- 0.25mm (according to VL53L1x datasheet) is standard
     // deviation and error is Gaussian
 
-    R << leftVariance, 0, 0, 0, 0, 0, 0, rightVariance, 0, 0, 0, 0, 0, 0,
+    R << rightVariance, 0, 0, 0, 0, 0, 0, leftVariance, 0, 0, 0, 0, 0, 0,
         frontVariance, 0, 0, 0, 0, 0, 0, backVariance, 0, 0, 0, 0, 0, 0,
         x_camVariance, 0, 0, 0, 0, 0, 0, y_camVariance;
 

@@ -13,20 +13,27 @@
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
-#define STRATEGY2
+#define STRATEGY1
 
-#define ROBOT1
-
+#define ROBOT2
 #define DEBUG_EVERYTHING
 //#define DEBUG_LIGHT_RING
 //#define DEBUG_THRESHOLD_VALUES
 //#define DEBUG_MOVEMENT
 
 
-//#define DEFENCE_BOT_CODE
+#define DEFENCE_BOT_CODE
 // print Serial
-// #define DEBUG_DEFENCE_BOT
+//#define DEBUG_DEFENCE_BOT
 // defence Bot settings
+#ifdef ROBOT2
+#define CATCHMENT_THRESHOLD 655
+#endif
+#ifdef ROBOT1
+#define CATCHMENT_THRESHOLD 700
+#endif
+
+
 #define DEFENCE_DEPTH_IN_LINE 1 // from 0 to 2
 // https://www.desmos.com/calculator/btpwnfdqyq
 #define DEFENCE_ACCELERATION_MULTIPLIER                                        \
@@ -35,7 +42,7 @@
 
 #define DEFENCE_STOP_LINE_TRACK_LIDAR_DIST 40
 
-#define ATTACK_BOT_CODE
+//#define ATTACK_BOT_CODE
 //  stealth strategy
 #define KICK_BEARING_ERROR             5
 #define X_LOCALISATION_ERROR_THRESHOLD 10
@@ -44,8 +51,8 @@
 // curve around ball settings
 // https://www.desmos.com/calculator/atvzoxtoxn
 #define OFFSET_MULTIPLIER 0.04F // variable a in desmos
-#define START_OFFSET      26    // variable d
-#define DEGREE_MULTIPLIER 5
+#define START_OFFSET      28   // variable d
+#define DEGREE_MULTIPLIER 20
 
 #define DRIBBLER_LOWER_LIMIT 128
 #define DRIBBLER_UPPER_LIMIT 198

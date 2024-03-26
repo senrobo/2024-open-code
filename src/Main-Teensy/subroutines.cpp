@@ -100,7 +100,7 @@ void findLine() {
             first_ldrPinout = pinNumber;
             first_tmpldrangle = lightArray.LDRBearings[pinNumber];
 
-            for (int i = pinNumber; i < LDRPINCOUNT; i++) {
+            for (int i = 0; i < LDRPINCOUNT; i++) {
                 if (lightArray.RAWLDRVALUES[i] > lightArray.LDRThresholds[i]) {
                     second_ldrPinout = i;
                     second_tmpldrangle = lightArray.LDRBearings[i];
@@ -143,10 +143,20 @@ void findLine() {
 
 double ballAngleOffset(double distance, double direction) {
     // offset multiplier https://www.desmos.com/calculator/8d2ztl2zf8
-    double angleoffset =
-        constrain(direction * 0.9, -90, 90) *
-        fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
-    return angleoffset;
+
+    if (direction < 50){
+        double constant = -5;
+        double angleoffset =
+            constrain(direction * 1, -90, 90) *
+            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
+             return angleoffset;
+    }
+    else {
+        double angleoffset =
+            constrain(direction * 1, -90, 90) *
+            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
+             return angleoffset;
+    }
 };
 
 double curveAroundBallMultiplier(double angle, double actual_distance,

@@ -5,6 +5,7 @@
 
 #include "PacketSerial.h"
 #include "SPI.h"
+#include "util.h"
 
 HardwareSerial MySerial0(0);
 
@@ -36,33 +37,34 @@ void setup() {
 
     L3LIDARSerial.begin(&MySerial0);
     Wire.begin();
-    // tflI2C.Set_I2C_Addr(0x11,0x35);
-    // tflI2C.Soft_Reset(0x11);
+    // tflI2C[3].Set_I2C_Addr(0x44,0x22);
+    // tflI2C[3].Soft_Reset(0x44);
     for (int i = 0; i < 4; i++) { tflI2C[i].Save_Settings(tfAddress[i]); }
+    // tflI2C[3].Soft_Reset(0x44);
 }
 
 void loop() {
-    i2cscanner();
-    // for (int i = 0; i < 4; i++) {
-    //     if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
-    //     {
-    //         if (i < 3) {
-    //             Serial.print(" Dist: ");
-    //             Serial.print(tfDist[i]);
-    //         }
+    //i2cscanner();
+    for (int i = 0; i < 4; i++) {
+        if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
+        {
+            if (i < 3) {
+                Serial.print(" Dist: ");
+                Serial.print(tfDist[i]);
+            }
 
-    //         else if (i == 3) {
-    //             Serial.print(" Dist: ");
-    //             Serial.println(tfDist[i]);
-    //         }
-    //         esp32lidardata.distance[i] = tfDist[i];
-    //     }
+            else if (i == 3) {
+                Serial.print(" Dist: ");
+                Serial.println(tfDist[i]);
+            }
+            esp32lidardata.distance[i] = tfDist[i];
+        }
 
-    //     else {
-    //         esp32lidardata.distance[i] = 0;
-    //         tflI2C[i].printStatus();
-    //     }
-    // }
+        else {
+            esp32lidardata.distance[i] = 0;
+            tflI2C[i].printStatus();
+        }
+    }
     delay(20);
 
     byte buf[sizeof(lidarTxPayload)];

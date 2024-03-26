@@ -85,7 +85,7 @@ void getBNOreading() {
             SENSOR_REPORTID_GYRO_INTEGRATED_ROTATION_VECTOR) {
             sensorValues.relativeBearing =
                 bno.getGyroIntegratedRVK()
-                * 180.0; // Convert yaw / heading to degree
+                * 180.0 * 0.8; // Convert yaw / heading to degree
         }
     }
 }
@@ -202,14 +202,13 @@ void loop() {
     processedValues.relativeBearing = -sensorValues.relativeBearing;
 
     //setup
-
     verifyingObjectExistance();
     processLidars();
 
     (processedValues.lidarConfidence[0] == 1) ? frontVariance = 3 : frontVariance = 400;
     (processedValues.lidarConfidence[1] == 1) ? rightVariance = 3 : rightVariance = 400;
     (processedValues.lidarConfidence[2] == 1) ? backVariance = 3 : backVariance = 400;
-    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 3 : leftVariance = 400;
+    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 0 : leftVariance = 400;
 
     sensorfusion.updateConstants(frontVariance, backVariance, leftVariance,
                                 rightVariance, 10, 15);
