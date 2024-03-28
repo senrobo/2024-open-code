@@ -90,6 +90,6 @@
 
 // dribbler settings
 #define DRIBBLER_PWM_PIN        0
-#define BRUSHLESS_DEFAULT_SPEED 220 // 220
+#define BRUSHLESS_DEFAULT_SPEED 220
 
 #endif

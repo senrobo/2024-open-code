@@ -10,6 +10,7 @@
 HardwareSerial MySerial0(0);
 
 #define XSHUT1PIN 0
+// #define DEBUGTOF
 
 PacketSerial L3LIDARSerial;
 TFLI2C front;
@@ -44,10 +45,11 @@ void setup() {
 }
 
 void loop() {
-    //i2cscanner();
+    // i2cscanner();
     for (int i = 0; i < 4; i++) {
         if (tflI2C[i].getData(tfDist[i], tfAddress[i])) // If read okay...
         {
+#ifdef DEBUGTOF
             if (i < 3) {
                 Serial.print(" Dist: ");
                 Serial.print(tfDist[i]);
@@ -57,6 +59,7 @@ void loop() {
                 Serial.print(" Dist: ");
                 Serial.println(tfDist[i]);
             }
+#endif
             esp32lidardata.distance[i] = tfDist[i];
         }
 

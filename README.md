@@ -39,5 +39,3 @@
 ├──  platformio.ini
 └──  README.md
 ```
-
-Please refer to the specific module directories and files for more details on their functionality and implementation.
