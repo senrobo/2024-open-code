@@ -22,7 +22,7 @@ TFLI2C tflI2C[4] = {front, right, back, left};
 int16_t tfDist[4];
 
 int tfAddress[4] = {0x35, 0x22, 0x33, 0x44}; // front, right, back, left
-// int tfAddr[4] = {0x11, 0x22, 0x33, 0x44}; // front, right, back, left
+
 struct lidardata {
     int distance[4];
 };
@@ -38,9 +38,10 @@ void setup() {
 
     L3LIDARSerial.begin(&MySerial0);
     Wire.begin();
+    for (int i = 0; i < 4; i++) { tflI2C[i].Save_Settings(tfAddress[i]); }
+
     // tflI2C[3].Set_I2C_Addr(0x44,0x22);
     // tflI2C[3].Soft_Reset(0x44);
-    for (int i = 0; i < 4; i++) { tflI2C[i].Save_Settings(tfAddress[i]); }
     // tflI2C[3].Soft_Reset(0x44);
 }
 
