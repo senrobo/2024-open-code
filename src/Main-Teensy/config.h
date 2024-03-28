@@ -16,9 +16,11 @@
 #define STRATEGY1
 // #define STRATEGY2
 
+// Robot Roles
+#define DEFENCE_BOT_CODE
+
 // Strategy Settings
 // Defense Bot settings
-// #define DEBUG_DEFENCE_BOT
 #define DEFENCE_DEPTH_IN_LINE 1 // from 0 to 2
 // https://www.desmos.com/calculator/btpwnfdqyq
 #define DEFENCE_ACCELERATION_MULTIPLIER                                        \
@@ -27,14 +29,10 @@
 
 #define DEFENCE_STOP_LINE_TRACK_LIDAR_DIST 40
 
-// #define ATTACK_BOT_CODE
-//   stealth strategy
+//  stealth strategy
 #define KICK_BEARING_ERROR             5
 #define X_LOCALISATION_ERROR_THRESHOLD 10
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
-
-// Robot Roles
-#define DEFENCE_BOT_CODE
 
 // MUX Configurations
 #define S0           15
@@ -56,6 +54,8 @@
 // #define DEBUG_MOVEMENT
 // #define DEBUG_LIDAR
 // #define LOCALISE_CODE
+// #define DEBUG_DEFENCE_BOT
+// #define ATTACK_BOT_CODE
 
 // Ball Cruve Settings
 // https://www.desmos.com/calculator/atvzoxtoxn
