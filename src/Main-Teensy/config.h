@@ -9,7 +9,7 @@
     #define CATCHMENT_THRESHOLD 700
 #endif
 #ifdef ROBOT2
-    #define CATCHMENT_THRESHOLD 600
+    #define CATCHMENT_THRESHOLD 470
 #endif
 
 // Strategy Selection
@@ -48,7 +48,7 @@
 #define RadiusofLDR 1.0F
 
 // DEBUG SETTINGS
-#define DEBUG_EVERYTHING
+//#define DEBUG_EVERYTHING
 // #define DEBUG_LIGHT_RING
 // #define DEBUG_THRESHOLD_VALUES
 // #define DEBUG_MOVEMENT
