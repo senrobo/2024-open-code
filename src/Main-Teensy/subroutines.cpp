@@ -80,8 +80,10 @@ void findLine() {
     sensorValues.onLine = 1;
 
     for (int pinNumber = 0; pinNumber < LDRPINCOUNT; pinNumber++) {
-        if (lightArray.highValues[pinNumber] < lightArray.RAWLDRVALUES[pinNumber]) {
-                lightArray.highValues[pinNumber] = lightArray.RAWLDRVALUES[pinNumber];
+        if (lightArray.highValues[pinNumber] <
+            lightArray.RAWLDRVALUES[pinNumber]) {
+            lightArray.highValues[pinNumber] =
+                lightArray.RAWLDRVALUES[pinNumber];
         }
 
 #ifdef DEBUG_LIGHT_RING
@@ -118,8 +120,6 @@ void findLine() {
                     }
                 }
             }
-
-
         }
 
         sensorValues.linetrackldr1 = final_ldrPinout1;
@@ -144,18 +144,19 @@ void findLine() {
 double ballAngleOffset(double distance, double direction) {
     // offset multiplier https://www.desmos.com/calculator/8d2ztl2zf8
 
-    if (direction < 50){
+    if (direction < 50) {
         double constant = -5;
         double angleoffset =
             constrain(direction * 1, -90, 90) *
-            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
-             return angleoffset;
-    }
-    else {
+            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)),
+                 1);
+        return angleoffset;
+    } else {
         double angleoffset =
             constrain(direction * 1, -90, 90) *
-            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
-             return angleoffset;
+            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)),
+                 1);
+        return angleoffset;
     }
 };
 
@@ -176,16 +177,12 @@ void attachBrushless() {
     delay(100);
 }
 
-
-
 // Goal Localisation
 // Compute the localized position using the offensive goal vector
 // Takes sensor input of the yellow goal's relative position and the bearing to
 // the field Calculates a "fake" center vector by adding the yellow goal's
 // actual position to a predefined vector Adjusts the angle of the fake center
 // vector and returns the actual center vector
-
-
 
 // Lidar Processing
 // Process the lidar values to get the relative position of the robot to the

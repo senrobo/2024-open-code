@@ -54,6 +54,8 @@
 // #define DEBUG_LIGHT_RING
 // #define DEBUG_THRESHOLD_VALUES
 // #define DEBUG_MOVEMENT
+// #define DEBUG_LIDAR
+// #define LOCALISE_CODE
 
 // Ball Cruve Settings
 // https://www.desmos.com/calculator/atvzoxtoxn
@@ -64,9 +66,6 @@
 #define DRIBBLER_LOWER_LIMIT 128
 #define DRIBBLER_UPPER_LIMIT 198
 
-// #define DEBUG_LIDAR
-
-// #define LOCALISE_CODE
 #define LOCALISE_CODE_TARGET_BEARING 0 // do this
 
 // slowdown with localisation code
