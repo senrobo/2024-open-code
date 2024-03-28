@@ -178,15 +178,15 @@ void loop() {
     lightArray.highValues[sensorValues.linetrackldr2] =
         sensorValues.linetrackldr1;
     for (int i = 0; i < 36; i++) {
-        lightArray.calculatedthesholdValue[i] =
+        lightArray.LDRThresholds[i] =
             lightArray.minRecordedValue[i] +
             (lightArray.maxRecordedValue[i] - lightArray.minRecordedValue[i]) *
-                0.3;
+                -0.45;
         if (i == 35) {
-            Serial.print(lightArray.calculatedthesholdValue[i]);
+            Serial.print(lightArray.LDRThresholds[i]);
             Serial.println(" ");
         } else {
-            Serial.print(lightArray.calculatedthesholdValue[i]);
+            Serial.print(lightArray.LDRThresholds[i]);
             Serial.print(" , ");
         }
     }
