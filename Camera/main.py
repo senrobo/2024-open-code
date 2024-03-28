@@ -128,7 +128,7 @@ if ID == 'robot2':
 
     if setting == 'lab':
         red_thresh = [(0, 100, 21, 127, 14, 88)]
-        blue_thresh = [(0, 100, -128, 4, -128, -15)]
+        blue_thresh = [((14, 26, -16, -3, -14, -5))]
         yellow_thresh = [(0, 100, -11, 127, 24, 127)]
 
     elif (setting == 'home'):

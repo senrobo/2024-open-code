@@ -48,7 +48,7 @@
 #define RadiusofLDR 1.0F
 
 // DEBUG SETTINGS
-//#define DEBUG_EVERYTHING
+#define DEBUG_EVERYTHING
 // #define DEBUG_LIGHT_RING
 // #define DEBUG_THRESHOLD_VALUES
 // #define DEBUG_MOVEMENT
