@@ -19,7 +19,7 @@
 //#define DEBUG_THRESHOLD_VALUES
 // #define DEBUG_MOVEMENT
 
-#define DEFENCE_BOT_CODE
+//#define DEFENCE_BOT_CODE
 //  print Serial
 // #define DEBUG_DEFENCE_BOT
 //  defence Bot settings
@@ -27,7 +27,7 @@
     #define CATCHMENT_THRESHOLD 0
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 660
+    #define CATCHMENT_THRESHOLD 680
 #endif
 
 #define DEFENCE_DEPTH_IN_LINE 1 // from 0 to 2
@@ -38,7 +38,7 @@
 
 #define DEFENCE_STOP_LINE_TRACK_LIDAR_DIST 0
 
-// #define ATTACK_BOT_CODE
+#define ATTACK_BOT_CODE
 //   stealth strategy
 #define KICK_BEARING_ERROR             2
 #define X_LOCALISATION_ERROR_THRESHOLD 10
@@ -90,9 +90,9 @@
 #define DRIBBLER_PWM_PIN        0
 #define DRIBBLER_LOWER_LIMIT    128
 #define DRIBBLER_UPPER_LIMIT    230
-#define BRUSHLESS_DEFAULT_SPEED 140 // 220
+#define BRUSHLESS_DEFAULT_SPEED 145 // 220
 #define BRUSHLESS_FAST_SPEED    155
-#define CATCH_BALL_DELAY_TIME   500 // in millis
+#define CATCH_BALL_DELAY_TIME   1000 // in millis
 
 // lidars processing settings
 #define X_AXIS_LIDARS_POSITIONAL_OFFSET                                        \
