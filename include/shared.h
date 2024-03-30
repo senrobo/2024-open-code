@@ -16,7 +16,7 @@ static double loopTimeinmicros() {
     timeControl.now = micros();
     timeControl.dt = timeControl.now - timeControl.last;
     timeControl.last = timeControl.now;
-    return timeControl.dt / 1000000;
+    return timeControl.dt;
 };
 
 static double loopTimeinMillis() {

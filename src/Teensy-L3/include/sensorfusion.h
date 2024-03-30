@@ -30,7 +30,7 @@ class Sensorfusion {
     int m = 6;
     int _l = 2;
 
-    int dt = loopTimeinmicros();
+    int dt = loopTimeinmicros() / 1000000;
     int tofVariance = 111115;
     int lidarVariance = 11115;
     int cameraVariance = 20;

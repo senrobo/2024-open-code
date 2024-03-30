@@ -9,6 +9,12 @@
 #include "movement.h"
 #include "shared.h"
 #include "util.h"
+#include "MovingAverage.h"
+
+
+// Buffer (and added samples) will be initialised as uint8_t, total 16 samples
+MovingAverage <uint8_t, 16> filter;
+
 
 void selectMUXChannel(uint8_t channel) {
     digitalWrite(S0, channel & 1);
@@ -64,7 +70,33 @@ void getValues() {
     sensorValues.ballinCatchment = readMUXChannel(5, MuxInput2);
 }
 
-void findLine() {
+void avg_LDRValues(int dt_micros, int delay) {
+    lightArray.averageLDRValuesTime += dt_micros;
+    if (lightArray.averageLDRValuesTime < delay) {
+        for (int i = 0 ; i < 36; i++){
+            lightArray.combinedLDRValues[i] += lightArray.RAWLDRVALUES[i];
+            if (i == 35) { lightArray.averageLDRCounter++; }
+
+        }
+    } else {
+        for (int i = 0; i < 36; i++) {
+
+            lightArray.averageLDRValues[i] =
+                lightArray.combinedLDRValues[i] / lightArray.averageLDRCounter;
+            
+            lightArray.combinedLDRValues[i] = 0;
+
+            if (i == 35) { 
+                lightArray.averageLDRCounter = 0;
+                lightArray.averageLDRValuesTime = 0;
+            }
+        }
+    }
+}
+
+
+
+void findLine(int dt_micros) {
     getValues();
     // initialize essential variables
     int first_tmpldrangle = 0;
@@ -78,13 +110,17 @@ void findLine() {
     int final_ldrPinout1 = 0;
     int final_ldrPinout2 = 0;
     sensorValues.onLine = 1;
+    avg_LDRValues(dt_micros, 10000);
 
     for (int pinNumber = 0; pinNumber < LDRPINCOUNT; pinNumber++) {
-        if (lightArray.highValues[pinNumber] < lightArray.RAWLDRVALUES[pinNumber]) {
-                lightArray.highValues[pinNumber] = lightArray.RAWLDRVALUES[pinNumber];
+        if (lightArray.highValues[pinNumber] < lightArray.averageLDRValues[pinNumber]) {
+            lightArray.highValues[pinNumber] =
+                lightArray.averageLDRValues[pinNumber];
         }
 
 #ifdef DEBUG_LIGHT_RING
+        // lightArray.highValues[sensorValues.linetrackldr2] =
+        //     sensorValues.linetrackldr1;
         const auto printSerial = [](int value) { Serial.printf("%3d", value); };
         if (pinNumber == 35) {
             printSerial(lightArray.highValues[pinNumber]);
@@ -94,14 +130,14 @@ void findLine() {
             Serial.print(" , ");
         }
 #endif
-        if (lightArray.RAWLDRVALUES[pinNumber] >
+        if (lightArray.averageLDRValues[pinNumber] >
             lightArray.LDRThresholds[pinNumber]) {
             sensorValues.onLine = 2;
             first_ldrPinout = pinNumber;
             first_tmpldrangle = lightArray.LDRBearings[pinNumber];
 
             for (int i = 0; i < LDRPINCOUNT; i++) {
-                if (lightArray.RAWLDRVALUES[i] > lightArray.LDRThresholds[i]) {
+                if (lightArray.averageLDRValues[i] > lightArray.LDRThresholds[i]) {
                     second_ldrPinout = i;
                     second_tmpldrangle = lightArray.LDRBearings[i];
                     tmpanglediff =
@@ -118,8 +154,6 @@ void findLine() {
                     }
                 }
             }
-
-
         }
 
         sensorValues.linetrackldr1 = final_ldrPinout1;
@@ -144,20 +178,23 @@ void findLine() {
 double ballAngleOffset(double distance, double direction) {
     // offset multiplier https://www.desmos.com/calculator/8d2ztl2zf8
 
-    if (direction < 50){
-        double constant = -5;
+    if (direction < 50) {
+        double constant = 0;
+        double angleoffset =
+            constrain(direction * 1.5, -90, 90) *
+            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)),
+                 1);
+        return angleoffset;
+    } else {
         double angleoffset =
             constrain(direction * 1, -90, 90) *
-            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
-             return angleoffset;
-    }
-    else {
-        double angleoffset =
-            constrain(direction * 1, -90, 90) *
-            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)), 1);
-             return angleoffset;
+            fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)),
+                 1);
+        return angleoffset;
     }
 };
+
+
 
 double curveAroundBallMultiplier(double angle, double actual_distance,
                                  double start_distance) {
@@ -169,14 +206,17 @@ double curveAroundBallMultiplier(double angle, double actual_distance,
 }
 
 void attachBrushless() {
-    analogWriteFrequency(DRIBBLER_PWM_PIN, 1000);
+    analogWriteFrequency(DRIBBLER_PWM_PIN, 1000); // 4096
+
     analogWrite(DRIBBLER_PWM_PIN, DRIBBLER_LOWER_LIMIT);
     delay(3000);
     analogWrite(DRIBBLER_PWM_PIN, DRIBBLER_UPPER_LIMIT);
     delay(100);
 }
 
-
+void driveBrusheless() {
+    analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
+}
 
 // Goal Localisation
 // Compute the localized position using the offensive goal vector
@@ -184,8 +224,6 @@ void attachBrushless() {
 // the field Calculates a "fake" center vector by adding the yellow goal's
 // actual position to a predefined vector Adjusts the angle of the fake center
 // vector and returns the actual center vector
-
-
 
 // Lidar Processing
 // Process the lidar values to get the relative position of the robot to the

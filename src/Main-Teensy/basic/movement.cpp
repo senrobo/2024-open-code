@@ -1,31 +1,51 @@
 #include "movement.h"
 #include "config.h"
 
-#define FL_PWM_PIN 11
-#define FL_IN1_PIN 10
-#define FL_IN2_PIN 12
-#define BL_PWM_PIN 8
-#define BL_IN1_PIN 7
-#define BL_IN2_PIN 9
-#define FR_PWM_PIN 2
-#define FR_IN1_PIN 1
-#define FR_IN2_PIN 3
-#define BR_PWM_PIN 5
-#define BR_IN1_PIN 4
-#define BR_IN2_PIN 6
+#ifdef ROBOT1
+    #define FL_PWM_PIN 11
+    #define FL_IN1_PIN 10
+    #define FL_IN2_PIN 12
+    #define BL_PWM_PIN 8
+    #define BL_IN1_PIN 7
+    #define BL_IN2_PIN 9
+    #define FR_PWM_PIN 2
+    #define FR_IN1_PIN 1
+    #define FR_IN2_PIN 3
+    #define BR_PWM_PIN 5
+    #define BR_IN1_PIN 4
+    #define BR_IN2_PIN 6
 
-#define FL_MULTIPLIER 1
-#define FR_MULTIPLIER 1
-#define BL_MULTIPLIER 1
-#define BR_MULTIPLIER 1
+    #define FL_MULTIPLIER 1
+    #define FR_MULTIPLIER 1
+    #define BL_MULTIPLIER 1
+    #define BR_MULTIPLIER 1
 
+#endif
 
+#ifdef ROBOT2
+    #define FL_PWM_PIN 11
+    #define FL_IN1_PIN 10
+    #define FL_IN2_PIN 12
+    #define BL_PWM_PIN 8
+    #define BL_IN1_PIN 7
+    #define BL_IN2_PIN 9
+    #define FR_PWM_PIN 2
+    #define FR_IN1_PIN 1
+    #define FR_IN2_PIN 3
+    #define BR_PWM_PIN 5
+    #define BR_IN1_PIN 4
+    #define BR_IN2_PIN 6
+
+    #define FL_MULTIPLIER 1
+    #define FR_MULTIPLIER 1
+    #define BL_MULTIPLIER 1
+    #define BR_MULTIPLIER 1
+#endif
 
 #define SIN34 0.55919290F
 #define SIN56 0.82903757F
 #define COS34 0.82903757F
 #define COS56 0.55919290F
-
 
 Movement::Movement(){};
 
@@ -46,7 +66,7 @@ void Movement::initialize() {
     // changing PWM resolution
     analogWriteResolution(10);
 
-    analogWriteFrequency(FL_PWM_PIN, 146484); 
+    analogWriteFrequency(FL_PWM_PIN, 146484);
     analogWriteFrequency(BL_PWM_PIN, 146484);
     analogWriteFrequency(FR_PWM_PIN, 146484);
     analogWriteFrequency(BR_PWM_PIN, 146484);
@@ -135,8 +155,7 @@ void Movement::drive(Point robotPosition) {
     double x = sind(_targetdirection);
     double y = cosd(_targetdirection);
 
-    
-    #ifdef ATTACK_BOT_CODE
+#ifdef ATTACK_BOT_CODE
 
     if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
         double deccel =
@@ -157,25 +176,45 @@ void Movement::drive(Point robotPosition) {
                       -1000, 0);
         x = constrain(x, deccel, 600);
     }
-    if (robotPosition.y > Y_AXIS_SLOWDOWN_START) {
-        double deccel =
-            constrain(Y_AXIS_SLOWDOWN_SPEED -
-                          ((robotPosition.y - Y_AXIS_SLOWDOWN_START) /
-                           (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) *
-                           Y_AXIS_SLOWDOWN_SPEED),
-                      0, 1000);
-        y = constrain(y, -600.0, deccel);
-    } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START) {
-        double deccel =
-            constrain(Y_AXIS_SLOWDOWN_SPEED -
-                          ((robotPosition.y + Y_AXIS_SLOWDOWN_START) /
-                           (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) *
-                           Y_AXIS_SLOWDOWN_SPEED),
-                      -1000, 0);
-        y = constrain(y, deccel, 600);
-
+    if (robotPosition.x < X_GOAL_WIDTH && robotPosition.x > -X_GOAL_WIDTH) {
+        if (robotPosition.y > Y_AXIS_SLOWDOWN_START_GOAL) {
+            double deccel = constrain(
+                Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                    ((robotPosition.y - Y_AXIS_SLOWDOWN_START_GOAL) /
+                     (Y_AXIS_SLOWDOWN_END_GOAL - Y_AXIS_SLOWDOWN_START_GOAL) *
+                     Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                0, 1000);
+            y = constrain(y, -600.0, deccel);
+        } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_GOAL) {
+            double deccel = constrain(
+                Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                    ((robotPosition.y + Y_AXIS_SLOWDOWN_START_GOAL) /
+                     (Y_AXIS_SLOWDOWN_END_GOAL - Y_AXIS_SLOWDOWN_START_GOAL) *
+                     Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                -1000, 0);
+            y = constrain(y, deccel, 600);
+        }
+    } else {
+        if (robotPosition.y > Y_AXIS_SLOWDOWN_START_EDGE) {
+            double deccel = constrain(
+                Y_AXIS_SLOWDOWN_SPEED_EDGE -
+                    ((robotPosition.y - Y_AXIS_SLOWDOWN_START_EDGE) /
+                     (Y_AXIS_SLOWDOWN_END_EDGE - Y_AXIS_SLOWDOWN_START_EDGE) *
+                     Y_AXIS_SLOWDOWN_SPEED_EDGE),
+                0, 1000);
+            y = constrain(y, -600.0, deccel);
+        } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_EDGE) {
+            double deccel = constrain(
+                Y_AXIS_SLOWDOWN_SPEED_EDGE -
+                    ((robotPosition.y + Y_AXIS_SLOWDOWN_START_EDGE) /
+                     (Y_AXIS_SLOWDOWN_END_EDGE - Y_AXIS_SLOWDOWN_START_EDGE) *
+                     Y_AXIS_SLOWDOWN_SPEED_EDGE),
+                -1000, 0);
+            y = constrain(y, deccel, 600);
+        }
     }
-    #endif
+
+#endif
 
     const auto transformspeed = [this](double velocityDirection,
                                        double angularComponent) {
@@ -193,12 +232,10 @@ void Movement::drive(Point robotPosition) {
     double BLSpeed = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
                      BL_MULTIPLIER;
 
-
     // if (FLSpeed < 50 && FLSpeed > -50) { FLSpeed = 0; }
     // if (FRSpeed < 50 && FRSpeed > -50) { FRSpeed = 0; }
     // if (BLSpeed < 50 && BLSpeed > -50) { BLSpeed = 0; }
     // if (BRSpeed < 50 && BRSpeed > -50) { BRSpeed = 0; }
-
 
 #ifdef ROBOT1
     digitalWriteFast(FL_IN1_PIN, FLSpeed > 0 ? LOW : HIGH);
@@ -222,11 +259,11 @@ void Movement::drive(Point robotPosition) {
     digitalWriteFast(FL_IN1_PIN, FLSpeed > 0 ? HIGH : LOW);
     digitalWriteFast(FL_IN2_PIN, FLSpeed > 0 ? LOW : HIGH);
 
-    digitalWriteFast(FR_IN1_PIN, FRSpeed > 0 ? HIGH : LOW);
-    digitalWriteFast(FR_IN2_PIN, FRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(FR_IN1_PIN, FRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(FR_IN2_PIN, FRSpeed > 0 ? HIGH : LOW);
 
-    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? LOW : HIGH);
-    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? HIGH : LOW);
+    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? HIGH: LOW);
+    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? LOW : HIGH);
 
     digitalWriteFast(BL_IN1_PIN, BLSpeed > 0 ? HIGH : LOW);
     digitalWriteFast(BL_IN2_PIN, BLSpeed > 0 ? LOW : HIGH);

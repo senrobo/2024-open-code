@@ -37,10 +37,10 @@ void setup() {
 
     L3LIDARSerial.begin(&MySerial0);
     Wire.begin();
-    // tflI2C[3].Set_I2C_Addr(0x44,0x22);
-    // tflI2C[3].Soft_Reset(0x44);
+    // tflI2C[2].Set_I2C_Addr(0x22,0x10);
+    // // tflI2C[3].Soft_Reset(0x44);
+    // tflI2C[2].Soft_Reset(0x22);
     for (int i = 0; i < 4; i++) { tflI2C[i].Save_Settings(tfAddress[i]); }
-    // tflI2C[3].Soft_Reset(0x44);
 }
 
 void loop() {
@@ -59,7 +59,6 @@ void loop() {
             }
             esp32lidardata.distance[i] = tfDist[i];
         }
-
         else {
             esp32lidardata.distance[i] = 0;
             tflI2C[i].printStatus();

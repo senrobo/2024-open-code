@@ -68,7 +68,7 @@ void processLidars() {
     
     for (int i = 0; i < 4; i++) {
         processedValues.lidarDistance[i] =
-            sensorValues.lidardist[i] + LIDARSMEASUREMENTOFFSET;
+            constrain(sensorValues.lidardist[i] + LIDARSMEASUREMENTOFFSET,0,1000);
     }
 
     if (sensorValues.relativeBearing <= 45 && sensorValues.relativeBearing > -45) {
