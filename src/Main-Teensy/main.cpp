@@ -9,12 +9,11 @@
 #include "movement.h"
 #include "shared.h"
 
-
 // hello
 
 // put function declarations here:
 
-Point KICK_POINT{0, 40};
+Point KICK_POINT{-30, 40};
 
 PacketSerial L3TeensySerial;
 PacketSerial L1Serial;
@@ -48,6 +47,7 @@ void receiveL3TxData(const byte *buf, size_t size) {
     processedValues.yellowgoal_exists = payload.sensorValues.yellowgoal_exists;
     processedValues.bluegoal_exists = payload.sensorValues.bluegoal_exists;
     processedValues.ballExists = payload.sensorValues.ballExists;
+    execution.attackMode = payload.sensorValues.attackMode;
 
     for (int i = 0; i < 4; i++) {
         processedValues.lidarDistance[i] =
@@ -66,8 +66,8 @@ void movetoPoint(Point destination) {
     double distance = (localisation - Vector::fromPoint(destination)).distance;
     movement.setconstantVelocity(Velocity::constant{
         movement.applySigmoid(400, 250, (distance) / 20, 0.9)});
-    movement.setmovetoPointDirection(
-        Direction::movetoPoint{localisation, destination});
+    movement.setmovetoPointDirection(Direction::movetoPoint{
+        localisation, destination, processedValues.relativeBearing});
 }
 
 double averageballinCatchment;
@@ -92,8 +92,29 @@ double avg_ballinCatchment(int dt, int delay) {
     }
 }
 
+double combinedBallDetected;
+double averageBallDetectedTime = 0;
+double averageBallDetectedCount = 0;
+double averageBallDetected = 0;
 
-
+double avg_ballDetected(int dt, int delay) {
+    averageBallDetectedTime += dt;
+    // Serial.println(sensorValues.ballDetected);
+    if (averageBallDetectedTime < delay) {
+        combinedBallDetected += processedValues.ballExists;
+        averageBallDetectedCount += 1;
+        return averageBallDetected;
+    } else {
+        averageBallDetectedTime = 0;
+        averageBallDetected =
+            averageBallDetectedCount > 0
+                ? combinedBallDetected / averageBallDetectedCount
+                : 0;
+        averageBallDetectedCount = 0;
+        combinedBallDetected = 0;
+        return averageBallDetected;
+    }
+}
 
 void setup() {
 
@@ -104,6 +125,7 @@ void setup() {
     pinMode(MuxInput1, INPUT);
     pinMode(MuxInput2, INPUT);
     pinMode(MuxInput3, INPUT);
+    pinMode(DRIBBLER_PWM_PIN, OUTPUT);
     pinMode(Solenoid_Pin, OUTPUT);
     digitalWrite(Solenoid_Pin, LOW);
 
@@ -139,21 +161,27 @@ double last_bearing = 0;
 
 void loop() {
     dt_micros = loopTimeinmicros();
-    dt = dt_micros/1000;
-
 
     // SETUP PHASE
     L3TeensySerial.update();
     L3TeensySerial.update();
-    Point ballposition = {(processedValues.ball_relativeposition +
+
+    Vector actualball_position = {
+        processedValues.ball_relativeposition.angle +
+            processedValues.relativeBearing,
+        processedValues.ball_relativeposition.distance};
+    Point ballposition = {(actualball_position +
                            Vector::fromPoint(processedValues.robot_position))
                               .x(),
-                          (processedValues.ball_relativeposition +
+                          (actualball_position +
                            Vector::fromPoint(processedValues.robot_position))
                               .y()};
 
     findLine(dt_micros);
-    processedValues.averageCatchmentValues = avg_ballinCatchment(dt, 10);
+    processedValues.averageCatchmentValues =
+        avg_ballinCatchment(dt_micros, 100000);
+
+    processedValues.averageballExists = avg_ballDetected(dt_micros, 100000);
 
     if (solenoid.kick == 1024 ||
         millis() - execution.lastkickTime < MIN_KICK_TIME) {
@@ -172,9 +200,17 @@ void loop() {
 
     if (processedValues.ball_relativeposition.distance > 50 &&
         processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
-        driveBrushless(120);
+
+#ifdef ROBOT1
+        execution.dribblerSpeed = 120;
+#endif
+#ifdef ROBOT2
+        execution.dribblerSpeed = 145;
+#endif
+    } else if (execution.strategy == 2) {
+        execution.dribblerSpeed = 155;
     } else {
-        driveBrushless(BRUSHLESS_DEFAULT_SPEED);
+        execution.dribblerSpeed = 150;
     }
 
 #ifdef DEBUG_THRESHOLD_VALUES
@@ -183,7 +219,7 @@ void loop() {
         lightArray.LDRThresholds[i] =
             lightArray.minRecordedValue[i] +
             (lightArray.maxRecordedValue[i] - lightArray.minRecordedValue[i]) *
-                0.5;
+                0.7;
         if (i == 35) {
             Serial.print(lightArray.LDRThresholds[i]);
             Serial.println(" ");
@@ -194,91 +230,143 @@ void loop() {
     }
 #endif
 
-#ifdef DEFENCE_BOT_CODE
+    if (execution.attackMode == 0) {
 
-    if (sensorValues.onLine == 1) {
-        movement.setconstantDirection(Direction::constant{
-            processedValues.bluegoal_relativeposition.angle});
-        movement.setconstantVelocity(Velocity::constant{500});
-        movement.setconstantBearing(
-            Bearing::constant{last_bearing, processedValues.relativeBearing});
-    }
+        movement.setBearingSettings(-500, 500, 4, 40, 0);
 
-    else if (sensorValues.onLine == 2 && processedValues.ballExists == 1) {
+        if (sensorValues.onLine == 2) {
+            if (clipAngleto180degrees(sensorValues.angleBisector) <= 90 &&
+                clipAngleto180degrees(sensorValues.angleBisector) >= -90) {
+                processedValues.defenceRobotAngleBisector =
+                    clipAngleto180degrees(180 + sensorValues.angleBisector);
+                processedValues.defenceRobotDepthinLine =
+                    (1.0 - sensorValues.depthinLine) + 1.0;
+            } else {
+                processedValues.defenceRobotAngleBisector =
+                    sensorValues.angleBisector;
+                processedValues.defenceRobotDepthinLine =
+                    sensorValues.depthinLine;
+            }
+        }
+        // if robot is no online
+        if (sensorValues.onLine == 1) {
+            if (processedValues.robot_position.y <= -84) {
+                movement.setmovetoPointDirection(Direction::movetoPoint{
+                    Vector::fromPoint(processedValues.robot_position),
+                    {0, 80},
+                    processedValues.relativeBearing});
+                movement.setconstantVelocity(Velocity::constant{400});
+                movement.setconstantBearing(Bearing::constant{
+                    last_bearing, processedValues.relativeBearing});
+            } else {
+                movement.setconstantBearing(Bearing::constant{
+                    last_bearing, processedValues.relativeBearing});
+                movement.setconstantVelocity(Velocity::constant{400});
+                movement.setconstantDirection(Direction::constant{
+                    processedValues.bluegoal_relativeposition.angle});
+            }
 
-        if (clipAngleto180degrees(sensorValues.angleBisector) <= 90 &&
-            clipAngleto180degrees(sensorValues.angleBisector) >= -90) {
-            processedValues.defenceRobotAngleBisector =
-                clipAngleto180degrees(180 + sensorValues.angleBisector);
-            processedValues.defenceRobotDepthinLine =
-                (1.0 - sensorValues.depthinLine) + 1.0;
-        } else {
-            processedValues.defenceRobotAngleBisector =
-                sensorValues.angleBisector;
-            processedValues.defenceRobotDepthinLine = sensorValues.depthinLine;
         }
 
-        // if (true) {
-        //     movement.setlinetrackDirection(
-        //         Direction::linetrack{processedValues.defenceRobotDepthinLine,
-        //                              processedValues.defenceRobotAngleBisector,
-        //                              DEFENCE_DEPTH_IN_LINE, false});
-        //     movement.setconstantVelocity(Velocity::constant{300});
-        // } 
-        if (processedValues.ballExists == 0) {
-            movement.setconstantVelocity(Velocity::constant{0});
-            movement.setconstantDirection(Direction::constant{0});
-        } else if (lightArray.averageLDRValues[0] > lightArray.LDRThresholds[0]) {
-            movement.setconstantVelocity(Velocity::constant{500});
-            movement.setconstantDirection(Direction::constant{0});
-        } else if (lightArray.averageLDRValues[18] > lightArray.LDRThresholds[18]) {
-            movement.setconstantVelocity(Velocity::constant{500});
-            movement.setconstantDirection(Direction::constant{180});
+        // if robot is online
+        else if (sensorValues.onLine == 2) {
+            if (processedValues.robot_position.y < -84 &&
+                (processedValues.robot_position.x < -15 ||
+                 processedValues.robot_position.x > 15)) {
+                if (processedValues.robot_position.x < -15) {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        processedValues.defenceRobotDepthinLine,
+                        processedValues.defenceRobotAngleBisector,
+                        DEFENCE_DEPTH_IN_LINE, true});
 
-        } else if (clipAngleto360degrees(
-                       processedValues.bluegoal_relativeposition.angle) >
-                       clipAngleto360degrees(
-                           processedValues.ball_relativeposition.angle - 180) &&
-                   processedValues.lidarDistance[3] >=
-                       DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
-            movement.setlinetrackDirection(
-                Direction::linetrack{processedValues.defenceRobotDepthinLine,
-                                     processedValues.defenceRobotAngleBisector,
-                                     DEFENCE_DEPTH_IN_LINE, false});
-            double progress =
-                (processedValues.bluegoal_relativeposition.angle -
-                 (processedValues.ball_relativeposition.angle - 180)) /
-                90;
-            movement.setconstantVelocity(
-                Velocity::constant{movement.applySigmoid(
-                    600, 0, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
-            // movement.setconstantVelocity(Velocity::constant{400});
-        }
+                    movement.setconstantVelocity(Velocity::constant{250});
 
-        else if (clipAngleto360degrees(
-                     processedValues.bluegoal_relativeposition.angle) <
-                     clipAngleto360degrees(
-                         processedValues.ball_relativeposition.angle - 180) &&
-                 processedValues.lidarDistance[1] >=
-                     DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
+                } else {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        processedValues.defenceRobotDepthinLine,
+                        processedValues.defenceRobotAngleBisector,
+                        DEFENCE_DEPTH_IN_LINE, false});
 
-            movement.setlinetrackDirection(
-                Direction::linetrack{processedValues.defenceRobotDepthinLine,
-                                     processedValues.defenceRobotAngleBisector,
-                                     DEFENCE_DEPTH_IN_LINE, true});
+                    movement.setconstantVelocity(Velocity::constant{250});
+                }
+            } else if (averageBallDetected <= 0.95) {
+                if (processedValues.bluegoal_relativeposition.angle > 0) {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        processedValues.defenceRobotDepthinLine,
+                        processedValues.defenceRobotAngleBisector,
+                        DEFENCE_DEPTH_IN_LINE, true});
+                    double progress =
+                        processedValues.bluegoal_relativeposition.angle / 90;
 
-            double progress =
-                (-clipAngleto360degrees(
-                     processedValues.bluegoal_relativeposition.angle) +
-                 clipAngleto360degrees(
-                     processedValues.ball_relativeposition.angle - 180)) /
-                90;
-            movement.setconstantVelocity(
-                Velocity::constant{movement.applySigmoid(
-                    600, 0, progress, DEFENCE_ACCELERATION_MULTIPLIER)});
+                    movement.setconstantVelocity(Velocity::constant{250});
 
-            // movement.setconstantVelocity(Velocity::constant{400});
-            // Serial.print("kj");
+                } else {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        processedValues.defenceRobotDepthinLine,
+                        processedValues.defenceRobotAngleBisector,
+                        DEFENCE_DEPTH_IN_LINE, false});
+                    double progress =
+                        processedValues.bluegoal_relativeposition.angle / 90;
+                    movement.setconstantVelocity(Velocity::constant{250});
+                }
+            }
+
+            else {
+                if (clipAngleto360degrees(
+                        processedValues.bluegoal_relativeposition.angle) >
+                        clipAngleto360degrees(
+                            processedValues.ball_relativeposition.angle -
+                            180) &&
+                    processedValues.lidarDistance[3] >=
+                        DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        processedValues.defenceRobotDepthinLine,
+                        processedValues.defenceRobotAngleBisector,
+                        DEFENCE_DEPTH_IN_LINE, false});
+                    double progress =
+                        (processedValues.bluegoal_relativeposition.angle -
+                         (processedValues.ball_relativeposition.angle - 180)) /
+                        90;
+                    movement.setconstantVelocity(
+                        Velocity::constant{movement.applySigmoid(
+                            600, 0, progress,
+                            DEFENCE_ACCELERATION_MULTIPLIER)});
+
+                }
+
+                else if (clipAngleto360degrees(
+                             processedValues.bluegoal_relativeposition.angle) <
+                             clipAngleto360degrees(
+                                 processedValues.ball_relativeposition.angle -
+                                 180) &&
+                         processedValues.lidarDistance[1] >=
+                             DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
+
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        processedValues.defenceRobotDepthinLine,
+                        processedValues.defenceRobotAngleBisector,
+                        DEFENCE_DEPTH_IN_LINE, true});
+
+                    double progress =
+                        (-clipAngleto360degrees(
+                             processedValues.bluegoal_relativeposition.angle) +
+                         clipAngleto360degrees(
+                             processedValues.ball_relativeposition.angle -
+                             180)) /
+                        90;
+                    movement.setconstantVelocity(
+                        Velocity::constant{movement.applySigmoid(
+                            600, 0, progress,
+                            DEFENCE_ACCELERATION_MULTIPLIER)});
+                    // movement.setconstantVelocity(Velocity::constant{400});
+                    // Serial.print("kj");
+                }
+            }
+            // movement.setconstantBearing(Bearing::constant{
+            //     0, -clipAngleto180degrees(
+            //            processedValues.defenceRobotAngleBisector + 180)});
+            movement.setconstantBearing(
+                Bearing::constant{0, processedValues.relativeBearing});
         }
 
         // else if (sensorValues.lidardist[3] <
@@ -289,39 +377,32 @@ void loop() {
         //            DEFENCE_STOP_LINE_TRACK_LIDAR_DIST) {
         //     movement.setconstantVelocity(Velocity::constant{0});
         //     movement.setconstantDirection(Direction::constant{0});
-        // }
-
-        movement.setconstantBearing(Bearing::constant{
-            0, -clipAngleto180degrees(
-                   processedValues.defenceRobotAngleBisector + 180)});
+        //
 
         last_bearing = processedValues.relativeBearing;
 
-        // movement.setconstantBearing(Bearing::constant{0.0,sensorValues.relativeBearing});
-    }
+        // movement.setconstantBearing(Bearing::constant{0.0,0});
 
-    // movement.setconstantBearing(Bearing::constant{0.0,0});
+#ifdef DEBUG_DEFENCE_BOT
+        const auto printSerial = [](double value) {
+            Serial.printf("%5d", (int)value);
+        };
+        Serial.print("Actual Angle Bisector: ");
+        printSerial(sensorValues.angleBisector);
+        Serial.print(" | Actual DepthinLine: ");
+        Serial.print(sensorValues.depthinLine);
+        Serial.print("| Angle Bisector: ");
+        printSerial(processedValues.defenceRobotAngleBisector);
+        Serial.print(" | DepthinLine: ");
+        Serial.print(processedValues.defenceRobotDepthinLine);
+        Serial.print(" | FirstValue: ");
+        Serial.print(sensorValues.linetrackldr1);
+        Serial.print(" | SecondValue: ");
+        Serial.print(sensorValues.linetrackldr1);
+        Serial.println(" ");
 
-    #ifdef DEBUG_DEFENCE_BOT
-    const auto printSerial = [](double value) {
-        Serial.printf("%5d", (int)value);
-    };
-    Serial.print("Actual Angle Bisector: ");
-    printSerial(sensorValues.angleBisector);
-    Serial.print(" | Actual DepthinLine: ");
-    Serial.print(sensorValues.depthinLine);
-    Serial.print("| Angle Bisector: ");
-    printSerial(processedValues.defenceRobotAngleBisector);
-    Serial.print(" | DepthinLine: ");
-    Serial.print(processedValues.defenceRobotDepthinLine);
-    Serial.print(" | FirstValue: ");
-    Serial.print(sensorValues.linetrackldr1);
-    Serial.print(" | SecondValue: ");
-    Serial.print(sensorValues.linetrackldr1);
-    Serial.println(" ");
-
-    #endif
 #endif
+    }
 
     // Serial.println(sensorValues.ballinCatchment);
 
@@ -366,167 +447,179 @@ void loop() {
     movetoPoint(location);
 #endif
 
-#ifdef ATTACK_BOT_CODE
-    // calculate time without ball
-    if (processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
-        execution.catchmentTime = millis();
-    }
-
-    if (execution.strategy == 2) {
-        if (ballposition.x > 0) {
-            execution.targetBearing = 150;
-        } else {
-            execution.targetBearing = -150;
-        }
-    } else if (execution.strategy == 1) {
-        execution.targetBearing = 0;
-    }
-
-    if (sensorValues.onLine == 2) {
-        movement.setconstantDirection(Direction::constant{
-            clipAngleto180degrees(180 + sensorValues.angleBisector)});
-        movement.setconstantVelocity(Velocity::constant{350});
-    }
-
-    else if (processedValues.averageCatchmentValues >=
-             CATCHMENT_THRESHOLD) { // 720
-        movement.setBearingSettings(-500, 500, 5, 50, 0);
-        solenoid.kick = 0;
-        if (((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
-              ballposition.x > X_BALL_STRATEGY2_RANGE) &&
-             (ballposition.y < Y_BALL_STRATEGY2)) ||
-            millis() - execution.lastTurnBackwardsTime < MIN_TURN_AROUND_TIME) {
-
-            if ((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
-                 ballposition.x > X_BALL_STRATEGY2_RANGE) &&
-                (ballposition.y < Y_BALL_STRATEGY2))
-                execution.lastTurnBackwardsTime = millis();
-            execution.strategy = 2;
-
-        } else {
-            execution.strategy = 1;
+    else {
+        movement.setBearingSettings(-500, 500, 4, 30, 0);
+        // calculate time without ball
+        if (processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
+            execution.catchmentTime = millis();
         }
 
-        if (processedValues.ballExists == 0) {
-            movetoPoint(DEFAULT_POSITION);
+        if (execution.strategy == 2) {
+            if (ballposition.x > 0) {
+                execution.targetBearing = 180;
+            } else {
+                execution.targetBearing = 180;
+            }
+        } else if (execution.strategy == 1) {
+            execution.targetBearing = 0;
         }
 
-        // else if (ballposition.x < X_AXIS_BALL_RANGE &&
-        //          ballposition.x > -X_AXIS_BALL_RANGE &&
-        //          ballposition.y > Y_AXIS_BALL_RANGE) {
-
-        //     movetoPoint(DEFAULT_POSITION);
-        // }
-
-        else {
-            movement.setconstantVelocity(
-                Velocity::constant{movement.applySigmoid(
-                    600, 250,
-                    curveAroundBallMultiplier(
-                        processedValues.ball_relativeposition.angle,
-                        processedValues.ball_relativeposition.distance - 20,
-                        70 - 20),
-                    2.0)});
-            solenoid.kick = 0;
+        if (sensorValues.onLine == 2) {
             movement.setconstantDirection(Direction::constant{
-                ballAngleOffset(processedValues.ball_relativeposition.distance,
-                                processedValues.ball_relativeposition.angle) +
-                processedValues.ball_relativeposition.angle});
+                clipAngleto180degrees(180 + sensorValues.angleBisector)});
+            movement.setconstantVelocity(Velocity::constant{350});
         }
-    } else if (processedValues.averageCatchmentValues <=
-               CATCHMENT_THRESHOLD) { // 720
 
-        if (execution.strategy == 1) {
-            movement.setBearingSettings(-200, 200, 10, 0, 0);
+        else if (processedValues.averageCatchmentValues >=
+                 CATCHMENT_THRESHOLD) { // 720
 
-            execution.targetBearing =
-                processedValues.relativeBearing +
-                processedValues.yellowgoal_relativeposition.angle;
+            solenoid.kick = 0;
+            if ((((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
+                   ballposition.x > X_BALL_STRATEGY2_RANGE) &&
+                  (ballposition.y < Y_BALL_STRATEGY2)) ||
+                 millis() - execution.lastTurnBackwardsTime <
+                     MIN_TURN_AROUND_TIME) &&
+                averageBallDetected > 0.95) {
 
-            if (processedValues.lidarDistance[0] < 30 &&
-                    processedValues.lidarConfidence[0] == 0 ||
-                millis() - execution.lastavoidTime < 1000) {
+                if ((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
+                     ballposition.x > X_BALL_STRATEGY2_RANGE) &&
+                    (ballposition.y < Y_BALL_STRATEGY2) &&
+                    averageBallDetected > 0.95 &&
+                    processedValues.robot_position.y < -40)
+                    ;
+                execution.lastTurnBackwardsTime = millis();
+                execution.strategy = 2;
+
+            } else {
+                execution.strategy = 1;
+            }
+
+            if (processedValues.ballExists == 0) {
+                movetoPoint(DEFAULT_POSITION);
+            }
+
+            // else if (ballposition.x < X_AXIS_BALL_RANGE &&
+            //          ballposition.x > -X_AXIS_BALL_RANGE &&
+            //          ballposition.y > Y_AXIS_BALL_RANGE) {
+
+            //     movetoPoint(DEFAULT_POSITION);
+            // }
+
+            else {
+
+                movement.setconstantVelocity(
+                    Velocity::constant{movement.applySigmoid(
+                        600, 250,
+                        curveAroundBallMultiplier(
+                            processedValues.ball_relativeposition.angle,
+                            processedValues.ball_relativeposition.distance - 20,
+                            70 - 20),
+                        2.0)});
+                solenoid.kick = 0;
+                movement.setconstantDirection(Direction::constant{
+                    ballAngleOffset(
+                        processedValues.ball_relativeposition.distance,
+                        processedValues.ball_relativeposition.angle) +
+                    processedValues.ball_relativeposition.angle});
+            }
+        } else if (processedValues.averageCatchmentValues <=
+                   CATCHMENT_THRESHOLD) { // 720
+
+            if (execution.strategy == 1) {
+                movement.setBearingSettings(-100, 100, 3, 0, 0);
+
+                execution.targetBearing =
+                    processedValues.relativeBearing +
+                    processedValues.yellowgoal_relativeposition.angle;
+
                 if (processedValues.lidarDistance[0] < 30 &&
-                    processedValues.lidarConfidence[0] == 0) {
-                    execution.lastavoidTime = millis();
-                    execution.setAvoidBotDirection == true;
-                }
+                        processedValues.lidarConfidence[0] == 0 ||
+                    millis() - execution.lastavoidTime < 1000) {
+                    if (processedValues.lidarDistance[0] < 30 &&
+                        processedValues.lidarConfidence[0] == 0) {
+                        execution.lastavoidTime = millis();
+                        execution.setAvoidBotDirection == true;
+                        if (processedValues.robot_position.x <= 0) {
+                            execution.direction = 90;
+                        } else {
+                            execution.direction = -90;
+                        }
+                    }
 
-                if (processedValues.robot_position.x <= 0) {
-                    movement.setconstantDirection(Direction::constant{-100});
+                    movement.setconstantDirection(
+                        Direction::constant{execution.direction});
                     movement.setconstantVelocity(Velocity::constant{600});
-                } else {
-                    movement.setconstantDirection(Direction::constant{100});
-                    movement.setconstantVelocity(Velocity::constant{600});
-                }
 
-            } else if (processedValues.yellowgoal_relativeposition.distance <
-                       90) {
-                if ((processedValues.relativeBearing <
-                         execution.targetBearing +
-                             KICK_BEARING_ERROR && // NEED TO RECRAFT!!!
-                     processedValues.relativeBearing >
-                         execution.targetBearing - KICK_BEARING_ERROR) &&
-                    (millis() - execution.catchmentTime) >
-                        CATCH_BALL_DELAY_TIME) {
-                    solenoid.kick = 1024;
+                } else if (processedValues.yellowgoal_relativeposition
+                               .distance < 90) {
+                    if ((processedValues.relativeBearing <
+                             execution.targetBearing +
+                                 KICK_BEARING_ERROR && // NEED TO RECRAFT!!!
+                         processedValues.relativeBearing >
+                             execution.targetBearing - KICK_BEARING_ERROR) &&
+                        (millis() - execution.catchmentTime) >
+                            CATCH_BALL_DELAY_TIME) {
+                        solenoid.kick = 1024;
 
+                    } else {
+
+                        movement.setconstantVelocity(Velocity::constant{500});
+                        movement.setconstantDirection(Direction::constant{
+                            processedValues.yellowgoal_relativeposition.angle});
+
+                        solenoid.kick = 1024;
+                    }
                 } else {
 
                     movement.setconstantVelocity(Velocity::constant{500});
                     movement.setconstantDirection(Direction::constant{
                         processedValues.yellowgoal_relativeposition.angle});
+                }
+            }
 
+            else if (execution.strategy == 2) {
+                execution.dribblerSpeed = 160;
+                if (processedValues.relativeBearing <
+                        execution.targetBearing + KICK_BEARING_ERROR &&
+                    processedValues.relativeBearing >
+                        execution.targetBearing - KICK_BEARING_ERROR &&
+                    (millis() - execution.catchmentTime) >
+                        CATCH_BALL_DELAY_TIME &&
+                    processedValues.relativeBearing > -60 &&
+                    processedValues.relativeBearing < 60) {
                     solenoid.kick = 1024;
                 }
-            } else {
 
-                movement.setconstantVelocity(Velocity::constant{500});
-                movement.setconstantDirection(Direction::constant{
-                    processedValues.yellowgoal_relativeposition.angle});
-            }
-        }
+                else if (processedValues.robot_position.x - KICK_POINT.x <
+                             X_LOCALISATION_ERROR_THRESHOLD &&
+                         processedValues.robot_position.x - KICK_POINT.x >
+                             -X_LOCALISATION_ERROR_THRESHOLD &&
+                         processedValues.robot_position.y - KICK_POINT.y <
+                             Y_LOCALISATION_ERROR_THRESHOLD &&
+                         processedValues.robot_position.y - KICK_POINT.y >
+                             -Y_LOCALISATION_ERROR_THRESHOLD &&
+                         (millis() - execution.catchmentTime) >
+                             CATCH_BALL_DELAY_TIME) {
+                    execution.targetBearing =
+                        (processedValues.relativeBearing +
+                         processedValues.yellowgoal_relativeposition.angle);
+                    movement.setBearingSettings(-500, -400, 4, 0, 0);
+                    movetoPoint(KICK_POINT);
+                }
 
-        else if (execution.strategy == 2) {
-            if (processedValues.relativeBearing <
-                    execution.targetBearing + KICK_BEARING_ERROR &&
-                processedValues.relativeBearing >
-                    execution.targetBearing - KICK_BEARING_ERROR &&
-                (millis() - execution.catchmentTime) > CATCH_BALL_DELAY_TIME) {
-                solenoid.kick = 1024;
-            }
-
-            else if (processedValues.robot_position.x - KICK_POINT.x <
-                         X_LOCALISATION_ERROR_THRESHOLD &&
-                     processedValues.robot_position.x - KICK_POINT.x >
-                         -X_LOCALISATION_ERROR_THRESHOLD &&
-                     processedValues.robot_position.y - KICK_POINT.y <
-                         Y_LOCALISATION_ERROR_THRESHOLD &&
-                     processedValues.robot_position.y - KICK_POINT.y >
-                         -Y_LOCALISATION_ERROR_THRESHOLD &&
-                     (millis() - execution.catchmentTime) >
+                else if (millis() - execution.catchmentTime >
                          CATCH_BALL_DELAY_TIME) {
-                execution.targetBearing =
-                    (processedValues.relativeBearing +
-                     processedValues.yellowgoal_relativeposition.angle);
-                movement.setBearingSettings(-200, 200, 2, 0, 0);
-                movetoPoint(KICK_POINT);
-            }
-
-            else if (millis() - execution.catchmentTime >
-                     CATCH_BALL_DELAY_TIME) {
-                Vector localisation = {processedValues.robot_position.x,
-                                       processedValues.robot_position.y};
-                movetoPoint(KICK_POINT);
-            } else {
-                movement.setconstantVelocity(Velocity::constant{0});
+                    Vector localisation = {processedValues.robot_position.x,
+                                           processedValues.robot_position.y};
+                    movetoPoint(KICK_POINT);
+                } else {
+                    movement.setconstantVelocity(Velocity::constant{0});
+                }
             }
         }
+        movement.setconstantBearing(Bearing::constant{
+            execution.targetBearing, processedValues.relativeBearing});
     }
-    movement.setconstantBearing(Bearing::constant{
-        execution.targetBearing, processedValues.relativeBearing});
-
-#endif
     // if (distance < 10) solenoid.kick = 255;
 
     // Serial.println(sensorValues.ball_relativeposition.distance);
@@ -594,7 +687,7 @@ void loop() {
     printDouble(Serial, processedValues.ball_relativeposition.distance, 3, 1);
     // processed Values
     Serial.print(" | ballExistence: ");
-    printDouble(Serial, processedValues.ballExists, 1, 1);
+    printDouble(Serial, processedValues.averageballExists, 1, 2);
     Serial.print(" | attackGoal Existence: ");
     printDouble(Serial, processedValues.yellowgoal_exists, 1, 1);
     Serial.print(" | defenceGoal Existence: ");
@@ -610,9 +703,15 @@ void loop() {
     printDouble(Serial, ballposition.y, 3, 0);
     Serial.print(" | targetBearing: ");
     printDouble(Serial, execution.targetBearing, 3, 0);
+    Serial.print(" | currentMode: ");
+    printDouble(Serial, execution.attackMode, 1, 1);
+    Serial.print(" | dt: ");
+    printDouble(Serial, dt_micros, 4, 1);
     Serial.println("");
 #endif
 
     movement.drive(
-        {processedValues.robot_position.x, processedValues.robot_position.y});
+        {processedValues.robot_position.x, processedValues.robot_position.y},
+        processedValues.relativeBearing, dt_micros);
+    driveBrushless(execution.dribblerSpeed);
 }

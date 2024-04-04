@@ -1,5 +1,6 @@
 #include "movement.h"
 #include "config.h"
+#include "main.h"
 
 #ifdef ROBOT1
     #define FL_PWM_PIN 11
@@ -81,11 +82,15 @@ void Movement::updateParameters(double actualbearing, double actualdirection,
 
 void Movement::setconstantDirection(Direction::constant params) {
     _targetdirection = params.value;
+    _accelerate == true;
 };
 
 void Movement::setmovetoPointDirection(Direction::movetoPoint params) {
-    _targetdirection =
-        (Vector::fromPoint(params.destination) - params.robotCoordinate).angle;
+    _targetdirection = clipAngleto180degrees(
+        (Vector::fromPoint(params.destination) - params.robotCoordinate).angle -
+        params.robotBearing);
+    
+    _accelerate == true;
 };
 
 void Movement::setlinetrackDirection(Direction::linetrack params) {
@@ -97,10 +102,48 @@ void Movement::setlinetrackDirection(Direction::linetrack params) {
     } else {
         _targetdirection = (correction * -90) + params.angleBisector + 90;
     }
+
+    _accelerate == false;
+}
+
+// In Movement.cpp
+void Movement::setCurveTracking(Point robotPosition, double r, double h,
+                                double k, bool track_left) {
+    double distance_to_circle = abs(
+        sqrt(pow(robotPosition.x - h, 2) + pow(robotPosition.y - k, 2)) - r);
+
+    double theta_desired;
+    if (track_left) {
+        theta_desired =
+            atan2(robotPosition.y - k, robotPosition.x - h) * 180 / PI + 90;
+    } else {
+        theta_desired =
+            atan2(robotPosition.y - k, robotPosition.x - h) * 180 / PI - 90;
+    }
+
+    theta_desired =
+        atan2(sin(theta_desired * PI / 180), cos(theta_desired * PI / 180)) *
+        180 / PI;
+
+    if (track_left == true) {
+        _targetdirection = theta_desired;
+    } else {
+        _targetdirection = theta_desired;
+    }
+    Serial.println(theta_desired);
+    // curveTrackingController.updateSetpoint(theta_desired);
+    // double theta_robot = ;
+    // double theta_error = theta_desired - theta_robot;
+    // theta_error =
+    //     atan2(sin(theta_error * PI / 180), cos(theta_error * PI / 180)) * 180
+    //     / PI;
+    // double control_signal = curveTrackingController.advance(theta_error);
+    _targetdirection = theta_desired;
 }
 
 void Movement::setconstantVelocity(Velocity::constant params) {
     _targetvelocity = params.value;
+    
 };
 void Movement::setstopatPointVelocity(Velocity::stopatPoint params) {
     auto correction = stopatPointController.advance(params.errordistance);
@@ -135,7 +178,7 @@ void Movement::setBearingSettings(double minV, double maxV, double KP,
     bearingController.updateGains(KP, KD, KI, 0.2);
 };
 
-void Movement::drive(Point robotPosition) {
+void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     bearingController.updateSetpoint(_targetbearing);
 
     if (_targetbearing <= 90 && _targetbearing >= -90) {
@@ -155,71 +198,105 @@ void Movement::drive(Point robotPosition) {
     double x = sind(_targetdirection);
     double y = cosd(_targetdirection);
 
-#ifdef ATTACK_BOT_CODE
+    double bearingRadians = bearing * M_PI / 180.0;
+    double rotationMatrix[2][2] = {{cos(bearingRadians), -sin(bearingRadians)},
+                                   {sin(bearingRadians), cos(bearingRadians)}};
 
-    if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
-        double deccel =
-            constrain(X_AXIS_SLOWDOWN_SPEED -
-                          ((robotPosition.x - X_AXIS_SLOWDOWN_START) /
-                           (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
-                           X_AXIS_SLOWDOWN_SPEED),
-                      0, 1000);
+    double rotatedX = rotationMatrix[0][0] * x + rotationMatrix[0][1] * y;
+    double rotatedY = rotationMatrix[1][0] * x + rotationMatrix[1][1] * y;
 
-        x = constrain(x, -700.0, deccel);
-    } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
+    if (execution.attackMode == 1) {
 
-        double deccel =
-            constrain(X_AXIS_SLOWDOWN_SPEED -
-                          ((robotPosition.x + X_AXIS_SLOWDOWN_START) /
-                           (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
-                           X_AXIS_SLOWDOWN_SPEED),
-                      -1000, 0);
-        x = constrain(x, deccel, 600);
-    }
-    if (robotPosition.x < X_GOAL_WIDTH && robotPosition.x > -X_GOAL_WIDTH) {
-        if (robotPosition.y > Y_AXIS_SLOWDOWN_START_GOAL) {
-            double deccel = constrain(
-                Y_AXIS_SLOWDOWN_SPEED_GOAL -
-                    ((robotPosition.y - Y_AXIS_SLOWDOWN_START_GOAL) /
-                     (Y_AXIS_SLOWDOWN_END_GOAL - Y_AXIS_SLOWDOWN_START_GOAL) *
-                     Y_AXIS_SLOWDOWN_SPEED_GOAL),
-                0, 1000);
-            y = constrain(y, -600.0, deccel);
-        } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_GOAL) {
-            double deccel = constrain(
-                Y_AXIS_SLOWDOWN_SPEED_GOAL -
-                    ((robotPosition.y + Y_AXIS_SLOWDOWN_START_GOAL) /
-                     (Y_AXIS_SLOWDOWN_END_GOAL - Y_AXIS_SLOWDOWN_START_GOAL) *
-                     Y_AXIS_SLOWDOWN_SPEED_GOAL),
-                -1000, 0);
-            y = constrain(y, deccel, 600);
+        if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
+
+            double deccel =
+                constrain(X_AXIS_SLOWDOWN_SPEED -
+                              ((robotPosition.x - X_AXIS_SLOWDOWN_START) /
+                               (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
+                               X_AXIS_SLOWDOWN_SPEED),
+                          0, 1000);
+
+            rotatedX = constrain(rotatedX, -700.0, deccel);
+        } else {
+
+            double deccel =
+                constrain(X_AXIS_SLOWDOWN_SPEED -
+                              ((robotPosition.x + X_AXIS_SLOWDOWN_START) /
+                               (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
+                               X_AXIS_SLOWDOWN_SPEED),
+                          -1000, cosd(bearing) * X_BEARING_SLOWDOWN_CONSTANT);
+            rotatedX = constrain(rotatedX, deccel, 600);
         }
-    } else {
-        if (robotPosition.y > Y_AXIS_SLOWDOWN_START_EDGE) {
-            double deccel = constrain(
-                Y_AXIS_SLOWDOWN_SPEED_EDGE -
-                    ((robotPosition.y - Y_AXIS_SLOWDOWN_START_EDGE) /
-                     (Y_AXIS_SLOWDOWN_END_EDGE - Y_AXIS_SLOWDOWN_START_EDGE) *
-                     Y_AXIS_SLOWDOWN_SPEED_EDGE),
-                0, 1000);
-            y = constrain(y, -600.0, deccel);
-        } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_EDGE) {
-            double deccel = constrain(
-                Y_AXIS_SLOWDOWN_SPEED_EDGE -
-                    ((robotPosition.y + Y_AXIS_SLOWDOWN_START_EDGE) /
-                     (Y_AXIS_SLOWDOWN_END_EDGE - Y_AXIS_SLOWDOWN_START_EDGE) *
-                     Y_AXIS_SLOWDOWN_SPEED_EDGE),
-                -1000, 0);
-            y = constrain(y, deccel, 600);
+        if (robotPosition.x < X_GOAL_WIDTH && robotPosition.x > -X_GOAL_WIDTH) {
+            if (robotPosition.y > Y_AXIS_SLOWDOWN_START_GOAL) {
+                double deccel = constrain(
+                    Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                        ((robotPosition.y - Y_AXIS_SLOWDOWN_START_GOAL) /
+                         (Y_AXIS_SLOWDOWN_END_GOAL -
+                          Y_AXIS_SLOWDOWN_START_GOAL) *
+                         Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                    0, 1000);
+                rotatedY = constrain(rotatedY, -600.0, deccel);
+            } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_GOAL) {
+                double deccel = constrain(
+                    Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                        ((robotPosition.y + Y_AXIS_SLOWDOWN_START_GOAL) /
+                         (Y_AXIS_SLOWDOWN_END_GOAL -
+                          Y_AXIS_SLOWDOWN_START_GOAL) *
+                         Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                    -1000, 0);
+                rotatedY = constrain(rotatedY, deccel, 600);
+            }
+        } else {
+            if (robotPosition.y > Y_AXIS_SLOWDOWN_START_EDGE) {
+                double deccel = constrain(
+                    Y_AXIS_SLOWDOWN_SPEED_EDGE -
+                        ((robotPosition.y - Y_AXIS_SLOWDOWN_START_EDGE) /
+                         (Y_AXIS_SLOWDOWN_END_EDGE -
+                          Y_AXIS_SLOWDOWN_START_EDGE) *
+                         Y_AXIS_SLOWDOWN_SPEED_EDGE),
+                    0, 1000);
+                rotatedY = constrain(rotatedY, -600.0, deccel);
+            } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_EDGE) {
+                double deccel = constrain(
+                    Y_AXIS_SLOWDOWN_SPEED_EDGE -
+                        ((robotPosition.y + Y_AXIS_SLOWDOWN_START_EDGE) /
+                         (Y_AXIS_SLOWDOWN_END_EDGE -
+                          Y_AXIS_SLOWDOWN_START_EDGE) *
+                         Y_AXIS_SLOWDOWN_SPEED_EDGE),
+                    -1000, 0);
+                rotatedY = constrain(rotatedY, deccel, 600);
+            }
         }
+
+        double adjustedX =
+            rotationMatrix[0][0] * rotatedX + rotationMatrix[1][0] * rotatedY;
+        double adjustedY =
+            rotationMatrix[0][1] * rotatedX + rotationMatrix[1][1] * rotatedY;
+
+        x = adjustedX;
+        y = adjustedY;
     }
 
-#endif
+    if (_accelerate == true){
+        if (_actualvelocity > _targetvelocity + 50) {
+            _actualvelocity -= _targetvelocity * 0.04;
+        } else if (_actualvelocity < _targetvelocity - 50) {
+            _actualvelocity += dt_micros * 0.04;
+        } else {
+            _actualvelocity = _targetvelocity;
+        }
+    }
+    else{
+        _actualvelocity = _targetvelocity;
+    }
 
-    const auto transformspeed = [this](double velocityDirection,
-                                       double angularComponent) {
-        return (int)(_targetvelocity * velocityDirection + angularComponent);
-    };
+
+        const auto transformspeed = [this](double velocityDirection,
+                                           double angularComponent) {
+            return (int)(_actualvelocity * velocityDirection +
+                         angularComponent);
+        };
 
     double angularComponent = _movingbearing * 1.3;
 
@@ -262,7 +339,7 @@ void Movement::drive(Point robotPosition) {
     digitalWriteFast(FR_IN1_PIN, FRSpeed > 0 ? LOW : HIGH);
     digitalWriteFast(FR_IN2_PIN, FRSpeed > 0 ? HIGH : LOW);
 
-    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? HIGH: LOW);
+    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? HIGH : LOW);
     digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? LOW : HIGH);
 
     digitalWriteFast(BL_IN1_PIN, BLSpeed > 0 ? HIGH : LOW);

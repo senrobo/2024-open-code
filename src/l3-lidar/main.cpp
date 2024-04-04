@@ -31,6 +31,8 @@ typedef struct lidarTxPayload {
     lidardata esp32lidardata;
 } lidarTxPayload;
 
+
+
 void setup() {
     Serial.begin(115200);
     MySerial0.begin(115200, SERIAL_8N1, -1, -1);
@@ -40,7 +42,12 @@ void setup() {
     // tflI2C[2].Set_I2C_Addr(0x22,0x10);
     // // tflI2C[3].Soft_Reset(0x44);
     // tflI2C[2].Soft_Reset(0x22);
+    //tflI2C[0].Hard_Reset(0x33);
+    // tflI2C[0].Set_I2C_Addr(0x33,0x10);
+    
     for (int i = 0; i < 4; i++) { tflI2C[i].Save_Settings(tfAddress[i]); }
+    // tflI2C[0].Soft_Reset(0x33);
+
 }
 
 void loop() {
@@ -58,13 +65,12 @@ void loop() {
                 Serial.println(tfDist[i]);
             }
             esp32lidardata.distance[i] = tfDist[i];
-        }
-        else {
+        } else {
             esp32lidardata.distance[i] = 0;
             tflI2C[i].printStatus();
         }
     }
-    delay(20);
+
 
     byte buf[sizeof(lidarTxPayload)];
     memcpy(buf, &esp32lidardata, sizeof(esp32lidardata));

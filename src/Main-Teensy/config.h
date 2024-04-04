@@ -13,33 +13,49 @@
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
-#define ROBOT1
+#define ROBOT2
 #define DEBUG_EVERYTHING
 //#define DEBUG_LIGHT_RING
 //#define DEBUG_THRESHOLD_VALUES
-// #define DEBUG_MOVEMENT
+//#define DEBUG_MOVEMENT
+
+#define BLUE_GOAL_VECTOR                                                       \
+    (Vector) { 0, 113.5 }
 
 //#define DEFENCE_BOT_CODE
 //  print Serial
 // #define DEBUG_DEFENCE_BOT
 //  defence Bot settings
 #ifdef ROBOT2
-    #define CATCHMENT_THRESHOLD 0
+    #define CATCHMENT_THRESHOLD 300
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 680
+    #define CATCHMENT_THRESHOLD 250
 #endif
 
-#define DEFENCE_DEPTH_IN_LINE 1 // from 0 to 2
+#define DEFENCE_DEPTH_IN_LINE 0.8 // from 0 to 2
 // https://www.desmos.com/calculator/btpwnfdqyq
 #define DEFENCE_ACCELERATION_MULTIPLIER                                        \
-    4 // smaller the value, the acceleration is slower(speeds up or slows down
-      // slower)
+    4 // larger the value, the acceleration is slower(speeds up or slows down
+        // slower)
 
 #define DEFENCE_STOP_LINE_TRACK_LIDAR_DIST 0
 
-#define ATTACK_BOT_CODE
-//   stealth strategy
+
+// // slowdown with localisation code
+// #define X_AXIS_SLOWDOWN_START_DEFENCE 10
+// #define X_AXIS_SLOWDOWN_END_DEFENCE   15
+// #define X_AXIS_SLOWDOWN_SPEED_DEFENCE 400
+
+// // For goal
+// #define Y_AXIS_SLOWDOWN_SPEED_DEFENCE 400
+// #define Y_AXIS_SLOWDOWN_START_DEFENCE 82
+// #define Y_AXIS_SLOWDOWN_END_DEFENCE  84
+
+
+
+//#define ATTACK_BOT_CODE
+//    stealth strategy
 #define KICK_BEARING_ERROR             2
 #define X_LOCALISATION_ERROR_THRESHOLD 10
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
@@ -60,6 +76,9 @@
 #define X_AXIS_SLOWDOWN_END   70
 #define X_AXIS_SLOWDOWN_SPEED 300
 
+#define X_BEARING_SLOWDOWN_CONSTANT 400
+#define Y_BEARING_SLOWDOWN_CONSTANT 400
+
 // For goal
 #define Y_AXIS_SLOWDOWN_SPEED_GOAL 300
 #define Y_AXIS_SLOWDOWN_START_GOAL 60
@@ -76,13 +95,13 @@
 #define Y_AXIS_BALL_RANGE 95
 
 // strategy 2
-#define X_BALL_STRATEGY2_RANGE 300030 // 30
-#define Y_BALL_STRATEGY2       -70000 //-70
-#define MIN_TURN_AROUND_TIME   0
+#define X_BALL_STRATEGY2_RANGE 30 // 30
+#define Y_BALL_STRATEGY2       -70//-70
+#define MIN_TURN_AROUND_TIME   50
 
 // default robot position
 #define DEFAULT_POSITION                                                       \
-    (Point) { 0, -30 }
+    (Point) { 30, 30}
 
 #define MIN_KICK_TIME 200
 
@@ -90,7 +109,7 @@
 #define DRIBBLER_PWM_PIN        0
 #define DRIBBLER_LOWER_LIMIT    128
 #define DRIBBLER_UPPER_LIMIT    230
-#define BRUSHLESS_DEFAULT_SPEED 145 // 220
+#define BRUSHLESS_DEFAULT_SPEED 155// 220
 #define BRUSHLESS_FAST_SPEED    155
 #define CATCH_BALL_DELAY_TIME   1000 // in millis
 

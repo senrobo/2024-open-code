@@ -23,11 +23,13 @@ BallPosition ballposition;
 PacketSerial CameraTeensySerial;
 PacketSerial TeensyTeensySerial;
 PacketSerial LidarTeensySerial;
+PacketSerial BluetoothTeensySerial;
 BNO08x bno;
 
 SensorValues sensorValues;
 ProcessedValues processedValues;
-
+BluetoothData bluetoothData;
+TeensyBluetooth teensyBluetooth;
 void receiveLidarTxData(const byte *buf, size_t size) {
     // load payload
     LidarTxPayload payload;
@@ -36,6 +38,15 @@ void receiveLidarTxData(const byte *buf, size_t size) {
     for (int i = 0; i < 4; i++) {
         sensorValues.lidardist[i] = payload.lidarTxData.distance[i];
     }
+    return;
+}
+
+void receiveBluetoothTxData(const byte *buf, size_t size) {
+    // load payload
+    BluetoothTxPayload payload;
+    // if (size != sizeof(payload)) return;
+    memcpy(&payload, buf, sizeof(payload));
+    processedValues.attackMode = payload.bluetoothData.attackMode;
     return;
 }
 
@@ -157,9 +168,10 @@ void setup() {
     Serial1.begin(500000);
     Serial5.begin(500000);
     Serial4.begin(115200);
+    Serial3.begin(115200); // bluetooth
     Serial.begin(9600);
     Wire.begin();
-    Wire.setClock(100000);
+    Wire.setClock(1000000);
     bno.begin(0x4A, Wire);
     CameraTeensySerial.begin(&Serial5);
     CameraTeensySerial.setPacketHandler(&receiveCameraTxData);
@@ -168,6 +180,9 @@ void setup() {
     LidarTeensySerial.setPacketHandler(&receiveLidarTxData);
 
     TeensyTeensySerial.begin(&Serial1);
+
+    BluetoothTeensySerial.begin(&Serial3);
+    BluetoothTeensySerial.setPacketHandler(&receiveBluetoothTxData);
 
     setReports();
 
@@ -188,9 +203,13 @@ void loop() {
     double dt = loopTimeinMillis();
     CameraTeensySerial.update();
     LidarTeensySerial.update();
+    BluetoothTeensySerial.update();
 
     setReports();
     getBNOreading();
+
+    teensyBluetooth.currentMode = processedValues.attackMode;
+    
 
     processedValues.bluegoal_relativeposition =
         sensorValues.bluegoal_relativeposition;
@@ -226,6 +245,20 @@ void loop() {
 
     Vector robotPosition = localize();
     processedValues.robot_position = {robotPosition.x(), robotPosition.y()};
+
+    if (teensyBluetooth.currentMode == 0 && 
+    processedValues.ball_relativeposition.angle < 20 && 
+    processedValues.ball_relativeposition.angle > -20 &&
+    processedValues.ball_relativeposition.distance < 30 &&
+    processedValues.ballExists == 1){
+        teensyBluetooth.switchMode = 1;
+    }
+    else{
+        teensyBluetooth.switchMode = 0;
+    }
+    if (teensyBluetooth.currentMode == 0 && teensyBluetooth.switchMode == 1){
+        processedValues.attackMode = 1;
+    }
 
     Serial.print(" | bearing: ");
     printDouble(Serial, processedValues.relativeBearing, 3, 1);
@@ -269,6 +302,14 @@ void loop() {
     printDouble(Serial, processedValues.yellowgoal_exists, 1, 1);
     Serial.print(" | defenceGoal Existence: ");
     printDouble(Serial, processedValues.bluegoal_exists, 1, 1);
+
+    Serial.print(" | currentMode: ");
+    printDouble(Serial, teensyBluetooth.currentMode, 1, 1);
+    Serial.print(" | attackModeESP32: ");
+    printDouble(Serial, processedValues.attackMode, 1, 1);
+    Serial.print(" | switchMode: ");
+    printDouble(Serial, teensyBluetooth.switchMode, 1, 1);
+
     // Location
     Serial.print(" | X_position: ");
     printDouble(Serial, processedValues.robot_position.x, 3, 0);
@@ -279,6 +320,10 @@ void loop() {
     byte buf[sizeof(teensytoTeensyTxPayload)];
     memcpy(buf, &processedValues, sizeof(processedValues));
     TeensyTeensySerial.send(buf, sizeof(buf));
+
+    byte buf1[sizeof(teensytoBluetoothPayload)];
+    memcpy(buf1, &teensyBluetooth, sizeof(teensyBluetooth));
+    BluetoothTeensySerial.send(buf1, sizeof(buf1));
 
     counter++;
 }

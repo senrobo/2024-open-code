@@ -16,6 +16,7 @@ struct constant {
 struct movetoPoint {
     Vector robotCoordinate;
     Point destination;
+    double robotBearing;
 };
 struct linetrack {
     double lineDepth;
@@ -69,10 +70,14 @@ class Movement {
     void setmoveBearingtoPoint(Bearing::moveBearingtoPoint params);
     void setBearingSettings(double min, double max, double KP, double KD,
                             double KI);
+    void setCurveTracking(Point robotPosition, double r, double h, double k,
+                          bool track_left);
 
     // PID Controllera
+    PIDController curveTrackingController =
+        PIDController(0.0, -180, 180, 1.0, 0.1, 0.0, 0, 1, 0.1);
     PIDController bearingController =
-        PIDController(0.0, -500, 500, 5, 50, 0.0, infinity(), 1, 0.2);
+        PIDController(0.0, -400, 400, 6, 50, 0.0, infinity(), 1, 0.2);
 
     PIDController directionController =
         PIDController(0.0, -90, 90, 1.5, 0, 0, 1.0, 1, 0.2);
@@ -83,7 +88,7 @@ class Movement {
     PIDController linetrackController = PIDController(
         0.0, -0.3, 0.3, 0.5, 0, 0, infinity(), 1, 0.2); // not yet implemented
 
-    void drive(Point robotPosition);
+    void drive(Point robotPosition, double bearing, int dt_micros);
     double applySigmoid(double startSpeed, double endSpeed, double progress,
                         double constant);
 
@@ -94,6 +99,7 @@ class Movement {
     double _targetdirection;
     double _targetbearing;
     double _targetvelocity;
+    bool _accelerate;
 
     //
     double _movingdirection;

@@ -1,20 +1,17 @@
 #include <Arduino.h>
-#include <ArduinoEigenDense.h>
 
 #include <array>
 
+#include "MovingAverage.h"
 #include "PacketSerial.h"
 #include "config.h"
 #include "main.h"
 #include "movement.h"
 #include "shared.h"
 #include "util.h"
-#include "MovingAverage.h"
-
 
 // Buffer (and added samples) will be initialised as uint8_t, total 16 samples
-MovingAverage <uint8_t, 16> filter;
-
+MovingAverage<uint8_t, 16> filter;
 
 void selectMUXChannel(uint8_t channel) {
     digitalWrite(S0, channel & 1);
@@ -73,28 +70,25 @@ void getValues() {
 void avg_LDRValues(int dt_micros, int delay) {
     lightArray.averageLDRValuesTime += dt_micros;
     if (lightArray.averageLDRValuesTime < delay) {
-        for (int i = 0 ; i < 36; i++){
+        for (int i = 0; i < 36; i++) {
             lightArray.combinedLDRValues[i] += lightArray.RAWLDRVALUES[i];
             if (i == 35) { lightArray.averageLDRCounter++; }
-
         }
     } else {
         for (int i = 0; i < 36; i++) {
 
             lightArray.averageLDRValues[i] =
                 lightArray.combinedLDRValues[i] / lightArray.averageLDRCounter;
-            
+
             lightArray.combinedLDRValues[i] = 0;
 
-            if (i == 35) { 
+            if (i == 35) {
                 lightArray.averageLDRCounter = 0;
                 lightArray.averageLDRValuesTime = 0;
             }
         }
     }
 }
-
-
 
 void findLine(int dt_micros) {
     getValues();
@@ -110,10 +104,11 @@ void findLine(int dt_micros) {
     int final_ldrPinout1 = 0;
     int final_ldrPinout2 = 0;
     sensorValues.onLine = 1;
-    avg_LDRValues(dt_micros, 10000);
+    avg_LDRValues(dt_micros, 20000);
 
     for (int pinNumber = 0; pinNumber < LDRPINCOUNT; pinNumber++) {
-        if (lightArray.highValues[pinNumber] < lightArray.averageLDRValues[pinNumber]) {
+        if (lightArray.highValues[pinNumber] <
+            lightArray.averageLDRValues[pinNumber]) {
             lightArray.highValues[pinNumber] =
                 lightArray.averageLDRValues[pinNumber];
         }
@@ -137,7 +132,8 @@ void findLine(int dt_micros) {
             first_tmpldrangle = lightArray.LDRBearings[pinNumber];
 
             for (int i = 0; i < LDRPINCOUNT; i++) {
-                if (lightArray.averageLDRValues[i] > lightArray.LDRThresholds[i]) {
+                if (lightArray.averageLDRValues[i] >
+                    lightArray.LDRThresholds[i]) {
                     second_ldrPinout = i;
                     second_tmpldrangle = lightArray.LDRBearings[i];
                     tmpanglediff =
@@ -194,8 +190,6 @@ double ballAngleOffset(double distance, double direction) {
     }
 };
 
-
-
 double curveAroundBallMultiplier(double angle, double actual_distance,
                                  double start_distance) {
     double radial_distance =
@@ -206,16 +200,23 @@ double curveAroundBallMultiplier(double angle, double actual_distance,
 }
 
 void attachBrushless() {
+
+#ifdef ROBOT2
     analogWriteFrequency(DRIBBLER_PWM_PIN, 1000); // 4096
 
     analogWrite(DRIBBLER_PWM_PIN, DRIBBLER_LOWER_LIMIT);
     delay(3000);
     analogWrite(DRIBBLER_PWM_PIN, DRIBBLER_UPPER_LIMIT);
     delay(100);
-}
+#endif
+#ifdef ROBOT1
+    analogWriteFrequency(DRIBBLER_PWM_PIN, 1000); // 4096
 
-void driveBrusheless() {
-    analogWrite(DRIBBLER_PWM_PIN, BRUSHLESS_DEFAULT_SPEED);
+    analogWrite(DRIBBLER_PWM_PIN, DRIBBLER_LOWER_LIMIT);
+    delay(3000);
+    analogWrite(DRIBBLER_PWM_PIN, DRIBBLER_UPPER_LIMIT);
+    delay(100);
+#endif
 }
 
 // Goal Localisation

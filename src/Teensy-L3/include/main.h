@@ -21,6 +21,7 @@ struct ProcessedValues {
     double lidarConfidence[4];
     int relativeBearing;
     Point robot_position;
+    int attackMode = 1;
 };
 
 struct SensorValues {
@@ -56,9 +57,24 @@ struct LidarTxPayload {
     LidarTxData lidarTxData;
 };
 
+struct BluetoothData {
+    int attackMode = 0;
+};
 
 
+typedef struct BluetoothTxPayload {
+    BluetoothData bluetoothData;
+} bluetoothTxPayload;
 
+struct TeensyBluetooth {
+    int switchMode = 0;
+    int currentMode = 0;
+};
+
+
+struct teensytoBluetoothPayload{
+    TeensyBluetooth teensyBluetooth; 
+};
 
 //subroutines
 void verifyingObjectExistance();
