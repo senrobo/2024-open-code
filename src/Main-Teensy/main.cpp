@@ -166,6 +166,7 @@ void loop() {
     L3TeensySerial.update();
     L3TeensySerial.update();
 
+
     Vector actualball_position = {
         processedValues.ball_relativeposition.angle +
             processedValues.relativeBearing,
@@ -182,22 +183,29 @@ void loop() {
         avg_ballinCatchment(dt_micros, 100000);
 
     processedValues.averageballExists = avg_ballDetected(dt_micros, 100000);
+
+    //Testing Defence Robot
+    #ifdef TEST_DEFENCE_ROBOT
+    execution.attackMode = 0;
+    #endif
+    
+
     if (solenoid.kick == 1024 ||
         millis() - execution.lastkickTime < MIN_KICK_TIME){
-        driveBrushless(140);
+        execution.dribblerSpeed = 130;
         if ((solenoid.kick == 1024 ||
              millis() - execution.lastkickTime < MIN_KICK_TIME) &&
             millis() - execution.lastdribblerKickDelayTime >
                 DRIBBLER_KICK_DELAY_TIME) {
             if (solenoid.kick == 1024) {
 
-                driveBrushless(140);
+                execution.dribblerSpeed = 130;
                 execution.lastkickTime = millis();
                 digitalWrite(Solenoid_Pin, HIGH);
 
             } else {
 
-                driveBrushless(140);
+                execution.dribblerSpeed = 130;
                 digitalWrite(Solenoid_Pin, HIGH);
             }
             if (solenoid.kick == 1024) { execution.lastkickTime = millis(); }
@@ -213,7 +221,7 @@ void loop() {
 
     if (processedValues.ball_relativeposition.distance > 50 &&
         processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
-
+        
 #ifdef ROBOT1
         execution.dribblerSpeed = 120;
 #endif
@@ -245,7 +253,10 @@ void loop() {
 
     if (execution.attackMode == 0) {
 
-        movement.setBearingSettings(-500, 500, 4, 40, 0);
+        movement.setBearingSettings(
+            MIN_BEARING_CORRECTION, MAX_BEARING_CORRECTION,
+            DEFENCE_ROBOT_BEARING_KP, DEFENCE_ROBOT_BEARING_KD,
+            DEFENCE_ROBOT_BEARING_KI);
 
         if (sensorValues.onLine == 2) {
             if (clipAngleto180degrees(sensorValues.angleBisector) <= 90 &&
@@ -283,16 +294,19 @@ void loop() {
 
         // if robot is online
         else if (sensorValues.onLine == 2) {
-            if (processedValues.robot_position.y < -82 &&
-                (processedValues.robot_position.x < -13 ||
-                 processedValues.robot_position.x > 13)) {
-                if (processedValues.robot_position.x < -15) {
+            if (processedValues.robot_position.y < DEFENCE_Y_AXIS_REJECTION &&
+                (processedValues.robot_position.x <
+                     DEFENCE_MIN_X_AXIS_REJECECTION ||
+                 processedValues.robot_position.x >
+                     DEFENCE_MAX_X_AXIS_REJECECTION)) {
+                if (processedValues.robot_position.x < 0) {
                     movement.setlinetrackDirection(Direction::linetrack{
                         processedValues.defenceRobotDepthinLine,
                         processedValues.defenceRobotAngleBisector,
                         DEFENCE_DEPTH_IN_LINE, true});
 
-                    movement.setconstantVelocity(Velocity::constant{300});
+                    movement.setconstantVelocity(
+                        Velocity::constant{DEFENCE_REJECTION_VELOCITY});
 
                 } else {
                     movement.setlinetrackDirection(Direction::linetrack{
@@ -300,44 +314,21 @@ void loop() {
                         processedValues.defenceRobotAngleBisector,
                         DEFENCE_DEPTH_IN_LINE, false});
 
-                    movement.setconstantVelocity(Velocity::constant{300});
+                    movement.setconstantVelocity(
+                        Velocity::constant{DEFENCE_REJECTION_VELOCITY});
                 }
-            }
-            // else if (clipAngleto360degrees(processedValues.relativeBearing +
-            //                                  sensorValues.angleBisector) >
-            //                130 ||
-            //            clipAngleto360degrees(processedValues.relativeBearing
-            //            +
-            //                                  sensorValues.angleBisector) <
-            //                230) {
-
-            //     if (processedValues.robot_position.x < 0) {
-            //         movement.setlinetrackDirection(Direction::linetrack{
-            //             processedValues.defenceRobotDepthinLine,
-            //             processedValues.defenceRobotAngleBisector,
-            //             DEFENCE_DEPTH_IN_LINE, true});
-
-            //         movement.setconstantVelocity(Velocity::constant{300});
-
-            //     } else {
-            //         movement.setlinetrackDirection(Direction::linetrack{
-            //             processedValues.defenceRobotDepthinLine,
-            //             processedValues.defenceRobotAngleBisector,
-            //             DEFENCE_DEPTH_IN_LINE, false});
-
-            //         movement.setconstantVelocity(Velocity::constant{300});
-            //     }
-            // }
-            else if (averageBallDetected <= 0.95) {
+            } else if (averageBallDetected <= 0.95) {
                 if (processedValues.bluegoal_relativeposition.angle > 0) {
                     movement.setlinetrackDirection(Direction::linetrack{
                         processedValues.defenceRobotDepthinLine,
                         processedValues.defenceRobotAngleBisector,
                         DEFENCE_DEPTH_IN_LINE, true});
+
                     double progress =
                         processedValues.bluegoal_relativeposition.angle / 90;
 
-                    movement.setconstantVelocity(Velocity::constant{250});
+                    movement.setconstantVelocity(
+                        Velocity::constant{DEFENCE_NO_BALL_VELOCITY});
 
                 } else {
                     movement.setlinetrackDirection(Direction::linetrack{
@@ -346,10 +337,10 @@ void loop() {
                         DEFENCE_DEPTH_IN_LINE, false});
                     double progress =
                         processedValues.bluegoal_relativeposition.angle / 90;
-                    movement.setconstantVelocity(Velocity::constant{250});
+                    movement.setconstantVelocity(
+                        Velocity::constant{DEFENCE_NO_BALL_VELOCITY});
                 }
             }
-
             else {
                 if (clipAngleto360degrees(
                         processedValues.bluegoal_relativeposition.angle) >
@@ -368,7 +359,8 @@ void loop() {
                         90;
                     movement.setconstantVelocity(
                         Velocity::constant{movement.applySigmoid(
-                            600, 0, progress,
+                            DEFENCE_TRACKBALL_MAX_VELOCITY,
+                            DEFENCE_TRACKBALL_MIN_VELOCITY, progress,
                             DEFENCE_ACCELERATION_MULTIPLIER)});
 
                 }
@@ -395,15 +387,11 @@ void loop() {
                         90;
                     movement.setconstantVelocity(
                         Velocity::constant{movement.applySigmoid(
-                            600, 0, progress,
+                            DEFENCE_TRACKBALL_MAX_VELOCITY,
+                            DEFENCE_TRACKBALL_MIN_VELOCITY, progress,
                             DEFENCE_ACCELERATION_MULTIPLIER)});
-                    // movement.setconstantVelocity(Velocity::constant{400});
-                    // Serial.print("kj");
                 }
             }
-            // movement.setconstantBearing(Bearing::constant{
-            //     0, -clipAngleto180degrees(
-            //            processedValues.defenceRobotAngleBisector + 180)});
             movement.setconstantBearing(
                 Bearing::constant{0, processedValues.relativeBearing});
         }
@@ -494,14 +482,19 @@ void loop() {
         }
 
         if (execution.strategy == 2) {
-            if (ballposition.x > 0) {
+            if (ballposition.x >= 0) {
+                execution.targetBearing = -180;
+                execution.strategy2Quadrant = 1;
+            } else if (ballposition.x < 0) {
                 execution.targetBearing = 180;
-            } else {
-                execution.targetBearing = 180;
+                execution.strategy2Quadrant = 4;
             }
         } else if (execution.strategy == 1) {
             execution.targetBearing = 0;
         }
+
+        execution.strategy = 2;
+        execution.targetBearing = 180;
 
         if (sensorValues.onLine == 2) {
             movement.setconstantDirection(Direction::constant{
@@ -636,17 +629,20 @@ void loop() {
                 execution.dribblerSpeed = 170;
                 if (processedValues.relativeBearing <
                         processedValues.yellowgoal_relativeposition.angle +
-                            processedValues.relativeBearing + 5 &&
+                            processedValues.relativeBearing + 10 &&
                     processedValues.relativeBearing >
                         processedValues.yellowgoal_relativeposition
                                 .angle + processedValues.relativeBearing -
-                            5 &&
+                            -10 &&
                     processedValues.relativeBearing > -120 &&
                     processedValues.relativeBearing < 120) {
                     solenoid.kick = 1024;
-                    movement.setBearingSettings(-1, 1, 0.01, 0, 0);
-                    execution.targetBearing = processedValues.relativeBearing;
+                    movement.setBearingSettings(0, 1, 0.00001, 0, 0);
+                    execution.targetBearing =
+                        processedValues.yellowgoal_relativeposition.angle +
+                        processedValues.relativeBearing;
                     movement.setconstantVelocity(Velocity::constant{0});
+                    execution.dribblerSpeed = 130;
                 }
 
                 else if ((processedValues.robot_position.x - KICK_POINT.x <
@@ -672,11 +668,34 @@ void loop() {
                             CATCH_BALL_DELAY_TIME) {
                         execution.lastTurnandKickTime = millis();
                     }
+
+                    #ifdef TURN_AND_KICK_STRATEGY
                     execution.targetBearing =
                         (processedValues.relativeBearing +
                          processedValues.yellowgoal_relativeposition.angle);
                     movement.setBearingSettings(94, 95, 4, 0, 0);
                     movement.setconstantVelocity(Velocity::constant{0});
+                    #endif
+                    #ifdef FLICK_STRATEGY
+                    if (execution.strategy2Quadrant == 1){
+                        if (processedValues.relativeBearing > 0){
+                            movement.setBearingSettings(300,301,4,0,0);
+                        }
+                        else{
+                            movement.setBearingSettings(-300,300,4,0,0);
+                            execution.targetBearing = -90;
+                        }
+                    } else if (execution.strategy2Quadrant == 4){
+                        if (processedValues.relativeBearing > 0) {
+                            movement.setBearingSettings(-301, -300, 4, 0, 0);
+                        } else {
+                            movement.setBearingSettings(-300, 300, 4, 0, 0);
+                            execution.targetBearing = 90;
+                        }
+                    }
+
+                    #endif       
+
                     // movetoPoint(KICK_POINT);
                 }
 
@@ -693,17 +712,7 @@ void loop() {
         movement.setconstantBearing(Bearing::constant{
             execution.targetBearing, processedValues.relativeBearing});
     }
-    // if (distance < 10) solenoid.kick = 255;
 
-    // Serial.println(sensorValues.ball_relativeposition.distance);
-    //  movement.setconstantVelocity(Velocity::constant{400});
-    // Serial.println(sensorValues.ball_relativeposition.distance);
-    //  sensorfusion.updateSensorValues(movement.getmotorValues()[0],movement.getmotorValues()[1],movement.getmotorValues()[2],
-    //                                movement.getmotorValues()[3], 0,
-    //                                sensorValues.backlidardist, 0, 0,
-    //                                localizeWithBothGoals().x(),
-    //                                localizeWithBothGoals().y());
-    // Vector localisation = sensorfusion.updateLocalisation();
 
 #ifdef DEBUG_EVERYTHING
 

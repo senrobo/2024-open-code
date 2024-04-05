@@ -89,7 +89,7 @@ void Movement::setmovetoPointDirection(Direction::movetoPoint params) {
     _targetdirection = clipAngleto180degrees(
         (Vector::fromPoint(params.destination) - params.robotCoordinate).angle -
         params.robotBearing);
-    
+
     _accelerate = false;
 };
 
@@ -143,7 +143,6 @@ void Movement::setCurveTracking(Point robotPosition, double r, double h,
 
 void Movement::setconstantVelocity(Velocity::constant params) {
     _targetvelocity = params.value;
-    
 };
 void Movement::setstopatPointVelocity(Velocity::stopatPoint params) {
     auto correction = stopatPointController.advance(params.errordistance);
@@ -178,12 +177,12 @@ void Movement::setBearingSettings(double minV, double maxV, double KP,
     bearingController.updateGains(KP, KD, KI, 0.2);
 };
 
-void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
+void Movement::setAcceleration(bool accelerate, double accelerationMultiplier) {
     _accelerate = accelerate;
     _accelerationMultiplier = accelerationMultiplier;
 }
 
-    void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
+void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     bearingController.updateSetpoint(_targetbearing);
 
     if (_targetbearing <= 90 && _targetbearing >= -90) {
@@ -195,9 +194,12 @@ void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
     } else if (_targetbearing < -90 && _targetbearing >= -135) {
         _movingbearing =
             bearingController.advance(clipAngleto180degrees(_actualbearing));
+    } else if (_targetbearing > 135) {
+        _movingbearing = 
+            bearingController.advance(clipAngleto360degrees(_actualbearing));
     } else {
         _movingbearing =
-            bearingController.advance(clipAngleto360degrees(_actualbearing));
+            bearingController.advance(-clipAngleto360degrees(_actualbearing));
     }
 
     double x = sind(_targetdirection);
@@ -222,7 +224,7 @@ void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
                           0, 1000);
 
             rotatedX = constrain(rotatedX, -700.0, deccel);
-        } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START){
+        } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
 
             double deccel =
                 constrain(X_AXIS_SLOWDOWN_SPEED -
@@ -285,28 +287,23 @@ void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
         y = adjustedY;
     }
 
+    _actualvelocity = _targetvelocity;
+
+    const auto transformspeed = [this](double velocityDirection,
+                                       double angularComponent) {
+        return (int)(_actualvelocity * velocityDirection + angularComponent);
+    };
     
-     _actualvelocity = _targetvelocity;
-    
-
-
-        const auto transformspeed = [this](double velocityDirection,
-                                           double angularComponent) {
-            return (int)(_actualvelocity * velocityDirection +
-                         angularComponent);
-        };
-
     double angularComponent = _movingbearing * 1.3;
-
 
     double FLSp =
         transformspeed(x * SIN34 + y * COS56, angularComponent) * FL_MULTIPLIER;
     double FRSp = transformspeed(x * -SIN34 + y * COS56, -angularComponent) *
-                     FR_MULTIPLIER;
+                  FR_MULTIPLIER;
     double BRSp = transformspeed(x * SIN34 + y * COS56, -angularComponent) *
-                     BR_MULTIPLIER;
+                  BR_MULTIPLIER;
     double BLSp = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
-                     BL_MULTIPLIER;
+                  BL_MULTIPLIER;
 
     _accelerate == false;
     if (_accelerate == true) {
@@ -338,13 +335,13 @@ void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
         } else {
             BRSpeed = BRSp;
         }
-    }
-    else{
+    } else {
         FLSpeed = FLSp;
         BRSpeed = BRSp;
         BLSpeed = BLSp;
         FRSpeed = FRSp;
     }
+
     // if (FLSpeed < 50 && FLSpeed > -50) { FLSpeed = 0; }
     // if (FRSpeed < 50 && FRSpeed > -50) { FRSpeed = 0; }
     // if (BLSpeed < 50 && BLSpeed > -50) { BLSpeed = 0; }
@@ -404,7 +401,7 @@ void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
     Serial.print(" | TargetVelocity: ");
     printSerial(_targetvelocity);
     Serial.print(" | XComponent: ");
-    printDouble(Serial,x,3,3);
+    printDouble(Serial, x, 3, 3);
     Serial.print(" | YComponent: ");
     printDouble(Serial, y, 3, 3);
     Serial.print(" | YPosition: ");
@@ -417,7 +414,7 @@ void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
                        Y_AXIS_SLOWDOWN_SPEED_GOAL),
                   0, 1000));
 
-        Serial.println(" ");
+    Serial.println(" ");
 
 #endif
 };

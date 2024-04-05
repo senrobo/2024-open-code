@@ -8,6 +8,7 @@
 #include "pid.h"
 #include "util.h"
 #include "vector.h"
+#include "config.h"
 
 namespace Direction {
 struct constant {
@@ -89,8 +90,11 @@ class Movement {
     PIDController stopatPointController = PIDController(
         0.0, -360, 360, 1.5, 0.01, 0.1, 1.0, 1, 0.2); // not yet implemented
 
-    PIDController linetrackController = PIDController(
-        0.0, -0.3, 0.3, 0.5, 0, 0, infinity(), 1, 0.2); // not yet implemented
+    PIDController linetrackController =
+        PIDController(0.0, MIN_LINETRACK_CORRECTION, MAX_LINETRACK_CORRECTION,
+                      DEFENCE_ROBOT_LINETRACK_KP, DEFENCE_ROBOT_LINETRACK_KD,
+                      DEFENCE_ROBOT_LINETRACK_KI, infinity(), 1,
+                      0.2); // not yet implemented
 
     void drive(Point robotPosition, double bearing, int dt_micros);
     double applySigmoid(double startSpeed, double endSpeed, double progress,
