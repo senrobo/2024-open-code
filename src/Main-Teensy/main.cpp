@@ -61,11 +61,11 @@ void receiveL3TxData(const byte *buf, size_t size) {
 
 void driveBrushless(double value) { analogWrite(DRIBBLER_PWM_PIN, value); }
 
-void movetoPoint(Point destination) {
+void movetoPoint(Point destination, double startSpeed = 400, double endSpeed = 250, double multiplier = 0.9) {
     Vector localisation = Vector::fromPoint(processedValues.robot_position);
     double distance = (localisation - Vector::fromPoint(destination)).distance;
     movement.setconstantVelocity(Velocity::constant{
-        movement.applySigmoid(400, 250, (distance) / 20, 0.9)});
+        movement.applySigmoid(startSpeed, endSpeed, (distance) / 20, multiplier)});
     movement.setmovetoPointDirection(Direction::movetoPoint{
         localisation, destination, processedValues.relativeBearing});
 }
@@ -143,7 +143,7 @@ void setup() {
     attachBrushless();
 }
 long last = 0;
-long dt = 0;
+
 long dt_micros = 0;
 long now = 0;
 int kicktimeinMillis = 0;
@@ -166,7 +166,6 @@ void loop() {
     L3TeensySerial.update();
     L3TeensySerial.update();
 
-
     Vector actualball_position = {
         processedValues.ball_relativeposition.angle +
             processedValues.relativeBearing,
@@ -183,15 +182,15 @@ void loop() {
         avg_ballinCatchment(dt_micros, 100000);
 
     processedValues.averageballExists = avg_ballDetected(dt_micros, 100000);
+    movement.setAcceleration(false, 0.0005);
 
-    //Testing Defence Robot
-    #ifdef TEST_DEFENCE_ROBOT
+// Testing Defence Robot
+#ifdef TEST_DEFENCE_ROBOT
     execution.attackMode = 0;
-    #endif
-    
+#endif
 
     if (solenoid.kick == 1024 ||
-        millis() - execution.lastkickTime < MIN_KICK_TIME){
+        millis() - execution.lastkickTime < MIN_KICK_TIME) {
         execution.dribblerSpeed = 130;
         if ((solenoid.kick == 1024 ||
              millis() - execution.lastkickTime < MIN_KICK_TIME) &&
@@ -209,8 +208,7 @@ void loop() {
                 digitalWrite(Solenoid_Pin, HIGH);
             }
             if (solenoid.kick == 1024) { execution.lastkickTime = millis(); }
-        }
-        else{
+        } else {
             digitalWrite(Solenoid_Pin, LOW);
         }
 
@@ -221,7 +219,7 @@ void loop() {
 
     if (processedValues.ball_relativeposition.distance > 50 &&
         processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
-        
+
 #ifdef ROBOT1
         execution.dribblerSpeed = 120;
 #endif
@@ -250,7 +248,29 @@ void loop() {
         }
     }
 #endif
-
+#ifdef LOCALISE_CODE
+    Point location = {0, 0};
+    truthValues.bearingtoField =
+        clipAngleto180degrees(processedValues.relativeBearing);
+    movement.setconstantBearing(Bearing::constant{LOCALISE_CODE_TARGET_BEARING,
+                                                  truthValues.bearingtoField});
+    movement.setAcceleration(true, 0.0006);
+    locationtime += dt_micros;
+    if (locationtime <= 5000000)
+        location = {1000, 0};
+    else if (locationtime <= 10000000)
+        location = {33, 490}; //33, 49
+    else if (locationtime <= 15000000)
+        location = {33, -490}; //33,-49
+    else if (locationtime <= 20000000)
+        location = {-330, -49};
+    else
+        locationtime = 0;
+    movetoPoint(location, 600, 250, 4);
+    execution.targetBearing = 0;
+    movement.setconstantBearing(Bearing::constant{execution.targetBearing, processedValues.relativeBearing});
+#endif
+#ifdef NORMAL_CODE
     if (execution.attackMode == 0) {
 
         movement.setBearingSettings(
@@ -340,8 +360,7 @@ void loop() {
                     movement.setconstantVelocity(
                         Velocity::constant{DEFENCE_NO_BALL_VELOCITY});
                 }
-            }
-            else {
+            } else {
                 if (clipAngleto360degrees(
                         processedValues.bluegoal_relativeposition.angle) >
                         clipAngleto360degrees(
@@ -454,28 +473,12 @@ void loop() {
 
 #endif
 
-#ifdef LOCALISE_CODE
-    Point location = {0, 0};
-    truthValues.bearingtoField =
-        clipAngleto180degrees(sensorValues.relativeBearing);
-    movement.setconstantBearing(Bearing::constant{LOCALISE_CODE_TARGET_BEARING,
-                                                  truthValues.bearingtoField});
-    locationtime += dt;
-    if (locationtime <= 5000)
-        location = {0, 0};
-    else if (locationtime <= 10000)
-        location = {33, 49};
-    else if (locationtime <= 15000)
-        location = {33, -49};
-    else if (locationtime <= 20000)
-        location = {-33, -49};
-    else
-        locationtime = 0;
-    movetoPoint(location);
-#endif
+
 
     else {
-        movement.setBearingSettings(-500, 500, 4, 30, 0);
+
+
+        movement.setBearingSettings(-500, 500, 3, 100, 0);
         // calculate time without ball
         if (processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
             execution.catchmentTime = millis();
@@ -483,18 +486,17 @@ void loop() {
 
         if (execution.strategy == 2) {
             if (ballposition.x >= 0) {
-                execution.targetBearing = -180;
+                execution.targetBearing = 180;
                 execution.strategy2Quadrant = 1;
+                KICK_POINT = {50, 40};
             } else if (ballposition.x < 0) {
                 execution.targetBearing = 180;
                 execution.strategy2Quadrant = 4;
+                KICK_POINT = {-50, 40};
             }
         } else if (execution.strategy == 1) {
             execution.targetBearing = 0;
         }
-
-        execution.strategy = 2;
-        execution.targetBearing = 180;
 
         if (sensorValues.onLine == 2) {
             movement.setconstantDirection(Direction::constant{
@@ -513,8 +515,7 @@ void loop() {
                   processedValues.averageballExists >= 0.98 &&
                   processedValues.robot_position.y > ballposition.y) ||
                  millis() - execution.lastTurnBackwardsTime <
-                     MIN_TURN_AROUND_TIME) &&
-                averageBallDetected > 0.95) {
+                     MIN_TURN_AROUND_TIME)) {
 
                 if ((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
                      ballposition.x > X_BALL_STRATEGY2_RANGE) &&
@@ -528,6 +529,7 @@ void loop() {
             } else {
                 execution.strategy = 1;
             }
+  
 
             if (processedValues.ballExists == 0) {
                 movetoPoint(DEFAULT_POSITION);
@@ -561,7 +563,7 @@ void loop() {
                    CATCHMENT_THRESHOLD) { // 720
 
             if (execution.strategy == 1) {
-                movement.setBearingSettings(-80, 80, 8, 0, 0);
+                movement.setBearingSettings(-80, 80, 3, 0, 0);
 
                 execution.targetBearing =
                     processedValues.relativeBearing +
@@ -585,7 +587,7 @@ void loop() {
                     movement.setconstantDirection(
                         Direction::constant{execution.direction});
                     movement.setconstantVelocity(Velocity::constant{500});
-                    movement.setAcceleration(true, 0.0001);
+                    movement.setAcceleration(true, 0.003);
 
                 } else if (processedValues.yellowgoal_relativeposition
                                .distance < 90) {
@@ -626,14 +628,13 @@ void loop() {
             }
 
             else if (execution.strategy == 2) {
-                execution.dribblerSpeed = 170;
+                execution.dribblerSpeed = 165;
                 if (processedValues.relativeBearing <
                         processedValues.yellowgoal_relativeposition.angle +
                             processedValues.relativeBearing + 10 &&
                     processedValues.relativeBearing >
-                        processedValues.yellowgoal_relativeposition
-                                .angle + processedValues.relativeBearing -
-                            -10 &&
+                        processedValues.yellowgoal_relativeposition.angle +
+                            processedValues.relativeBearing - 10 &&
                     processedValues.relativeBearing > -120 &&
                     processedValues.relativeBearing < 120) {
                     solenoid.kick = 1024;
@@ -669,23 +670,22 @@ void loop() {
                         execution.lastTurnandKickTime = millis();
                     }
 
-                    #ifdef TURN_AND_KICK_STRATEGY
+#ifdef TURN_AND_KICK_STRATEGY
                     execution.targetBearing =
                         (processedValues.relativeBearing +
                          processedValues.yellowgoal_relativeposition.angle);
                     movement.setBearingSettings(94, 95, 4, 0, 0);
                     movement.setconstantVelocity(Velocity::constant{0});
-                    #endif
-                    #ifdef FLICK_STRATEGY
-                    if (execution.strategy2Quadrant == 1){
-                        if (processedValues.relativeBearing > 0){
-                            movement.setBearingSettings(300,301,4,0,0);
-                        }
-                        else{
-                            movement.setBearingSettings(-300,300,4,0,0);
+#endif
+#ifdef FLICK_STRATEGY
+                    if (execution.strategy2Quadrant == 1) {
+                        if (processedValues.relativeBearing > 0) {
+                            movement.setBearingSettings(300, 301, 4, 0, 0);
+                        } else {
+                            movement.setBearingSettings(-300, 300, 4, 0, 0);
                             execution.targetBearing = -90;
                         }
-                    } else if (execution.strategy2Quadrant == 4){
+                    } else if (execution.strategy2Quadrant == 4) {
                         if (processedValues.relativeBearing > 0) {
                             movement.setBearingSettings(-301, -300, 4, 0, 0);
                         } else {
@@ -694,7 +694,7 @@ void loop() {
                         }
                     }
 
-                    #endif       
+#endif
 
                     // movetoPoint(KICK_POINT);
                 }
@@ -704,6 +704,7 @@ void loop() {
                     Vector localisation = {processedValues.robot_position.x,
                                            processedValues.robot_position.y};
                     movetoPoint(KICK_POINT);
+                    movement.setAcceleration(true, 0.0003);
                 } else {
                     movement.setconstantVelocity(Velocity::constant{0});
                 }
@@ -713,7 +714,7 @@ void loop() {
             execution.targetBearing, processedValues.relativeBearing});
     }
 
-
+#endif
 #ifdef DEBUG_EVERYTHING
 
     // lightRing
@@ -789,14 +790,25 @@ void loop() {
     printDouble(Serial, execution.attackMode, 1, 1);
     Serial.print(" | dt: ");
     printDouble(Serial, dt_micros, 4, 1);
+    Serial.print(" | dribblerSpeed: ");
+    printDouble(Serial, execution.dribblerSpeedAccel, 4, 1);
     Serial.println("");
 #endif
 
     movement.drive(
         {processedValues.robot_position.x, processedValues.robot_position.y},
         processedValues.relativeBearing, dt_micros);
-    #ifdef ROBOT1
-    execution.dribblerSpeed += 30;
-    #endif
-    driveBrushless(execution.dribblerSpeed);
+#ifdef ROBOT1
+    execution.dribblerSpeed += 60;
+#endif
+    if (execution.dribblerSpeedAccel < execution.dribblerSpeed - 5) {
+        execution.dribblerSpeedAccel += dt_micros * 0.00002;
+    } else if (execution.dribblerSpeedAccel > execution.dribblerSpeed + 5) {
+        execution.dribblerSpeedAccel -= dt_micros * 0.00002;
+    } else {
+        execution.dribblerSpeedAccel = execution.dribblerSpeed;
+    }
+
+
+    driveBrushless(execution.dribblerSpeedAccel);
 }

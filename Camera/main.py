@@ -70,19 +70,19 @@ kf = KalmanFilter(F=F, B=B, H=H, Q=Q, R=R)
 
 
 #setting = 'home'
-setting = 'lab'
-
+#setting = 'lab'
+setting = 'VincentHome'
 
 sensor.reset()
 sensor.set_pixformat(sensor.RGB565)
 sensor.set_framesize(sensor.QVGA)
 sensor.skip_frames(time = 2000)
 if setting == 'lab':
-    sensor.set_auto_gain(False, gain_db=17)
+    sensor.set_auto_gain(False, gain_db=22)
     #easier to detect blue goal but harder to yellow goal and ball if gain is higher
     #converse is true
 elif setting == 'home' :
-    sensor.set_auto_gain(False, gain_db=23)
+    sensor.set_auto_gain(False, gain_db =19)
 
 
 print("1")
@@ -114,47 +114,57 @@ print("4")
 
 clock = time.clock()
 
-#ID = 'robot1'
-ID = 'robot2'
+ID = 'robot1'
+#ID = 'robot2'
 
 
 if ID == 'robot2':
-    centreAngleY = 121
-    centreAngleX = 162
-    centreY = 122
-    centreX = 166
+    centreAngleY = 128
+    centreAngleX = 169
+    centreY = 118
+    centreX = 161
 
     ROI = (0, 0, 298, 240)
 
     if setting == 'lab':
         red_thresh = [(0, 100, 21, 127, 14, 88)]
-        blue_thresh = [(0, 100, -128, 4, -128, -15)]
+        blue_thresh = [(0, 100, -128, 127, -128, -16)]
         yellow_thresh = [(0, 100, -11, 127, 24, 127)]
 
     elif (setting == 'home'):
         red_thresh = [(28, 72, 19, 127, 7, 36)]
-        blue_thresh = [(15, 23, -13, -1, -128, -5)]
-        yellow_thresh = [(23, 100, -128, 8, 14, 127)]
+        blue_thresh = [(0, 25, -119, -5, -122, -2)]
+        yellow_thresh = [(0, 100, -11, 127, 14, 127)]
+    elif setting == 'VincentHome':
+        red_thresh = [(0, 100, 21, 127, 14, 88)]
+        blue_thresh = [(0, 100, -128, 127, -128, -16)]
+        yellow_thresh = [(0, 100, -11, 127, 24, 127)]
+
 
 
 
 else:
-    centreAngleY = 121
+    centreAngleY = 123
     centreAngleX = 162
-    centreY = 119
-    centreX = 159
+    centreY = 123
+    centreX = 162
     CAMERA_CENTER = np.array((centreX,centreY))
 
 
     if setting == 'lab':
-        red_thresh = [(0, 100, 21, 127, 14, 88)]
-        blue_thresh = [(0, 62, -128, 4, -128, -7)]
-        yellow_thresh = [(0, 100, -11, 127, 24, 127)]
+        red_thresh = [(0, 100, 22, 127, -128, 127)]
+        blue_thresh = [(0, 46, -128, 1, -128, -9)]
+        yellow_thresh = [(0, 83, -128, 113, 18, 127)]
 
     elif (setting == 'home'):
-        red_thresh = [(28, 72, 19, 127, 7, 36)]
-        blue_thresh = [(15, 23, -13, -1, -128, -5)]
-        yellow_thresh = [(23, 100, -128, 8, 14, 127)]
+        red_thresh = [(0, 100, 21, 127, 14, 88)]
+        blue_thresh = [(0, 21, -128, 12, -122, -6)]
+        yellow_thresh = [(0, 100, -11, 127, 14, 127)]
+    elif setting == 'VincentHome':
+        red_thresh = [(0, 100, 21, 127, 14, 88)]
+        blue_thresh = [(0, 100, -128, 127, -128, -16)]
+        yellow_thresh = [(0, 100, -11, 127, 24, 127)]
+
 
     ROI = (0, 0, 320, 240)
 
@@ -376,8 +386,8 @@ def find_objects(debug=False):
     global notFoundCount
     predBall = None
     img.draw_cross(centreX, centreY, color = (255, 255, 255))
-    ball = track_goal(red_thresh, 1, 1, color = (0, 255, 0), stride = 1, debug =  debug, merge = False, margin = 0)
-    blue = track_goal(blue_thresh, 10, 10, color = (0, 0, 255), stride = 2,  debug = debug, merge = True, margin = 5)
+    ball = track_goal(red_thresh, 3, 3, color = (0, 255, 0), stride = 1, debug =  debug, merge = False, margin = 0)
+    blue = track_goal(blue_thresh, 5, 5, color = (0, 0, 255), stride = 2,  debug = debug, merge = True, margin = 0)
     yellow = track_goal(yellow_thresh, 10, 10, color = (255, 0, 0), stride = 5, debug =  debug, merge = False, margin = 0)
 
     if ballFound:
@@ -549,7 +559,7 @@ while(True):
         #data[4],
         #time,
     #)
-    print(data[1])
+    print(data[3])
 
     # Encode with COBS
     buf = cobs_encode(buf)

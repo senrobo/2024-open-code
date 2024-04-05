@@ -191,6 +191,8 @@ struct ProcessedValues {
     Point robot_position;
     double defenceRobotAngleBisector;
     double defenceRobotDepthinLine;
+    double attackRobotAngleBisector;
+    double attackRobotDepthinLine;
     double averageCatchmentValues;
     double averageballExists;
 };
@@ -214,7 +216,8 @@ struct Execution {
     int lastTurnBackwardsTime = 0;
     int lastTurnandKickTime = 0;
     double direction = 0.0;
-    int dribblerSpeed = 0;
+    double dribblerSpeed = 0;
+    double dribblerSpeedAccel = 140;
     int attackMode = 1;
     
 };

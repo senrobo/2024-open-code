@@ -82,7 +82,7 @@ class Movement {
     PIDController curveTrackingController =
         PIDController(0.0, -180, 180, 1.0, 0.1, 0.0, 0, 1, 0.1);
     PIDController bearingController =
-        PIDController(0.0, -400, 400, 6, 50, 0.0, infinity(), 1, 0.2);
+        PIDController(0.0, -400, 400, 3.2, 100, 0.0, infinity(), 1, 0.2);
 
     PIDController directionController =
         PIDController(0.0, -90, 90, 1.5, 0, 0, 1.0, 1, 0.2);

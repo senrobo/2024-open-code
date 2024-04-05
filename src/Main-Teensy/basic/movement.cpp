@@ -224,14 +224,15 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
                           0, 1000);
 
             rotatedX = constrain(rotatedX, -700.0, deccel);
-        } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START) {
+        } else if (robotPosition.x < X_NEGATIVE_AXIS_SLOWDOWN_START) {
 
-            double deccel =
-                constrain(X_AXIS_SLOWDOWN_SPEED -
-                              ((robotPosition.x + X_AXIS_SLOWDOWN_START) /
-                               (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
-                               X_AXIS_SLOWDOWN_SPEED),
-                          -1000, cosd(bearing) * X_BEARING_SLOWDOWN_CONSTANT);
+            double deccel = constrain(
+                X_AXIS_SLOWDOWN_SPEED -
+                    ((-robotPosition.x + X_NEGATIVE_AXIS_SLOWDOWN_START) /
+                     (X_NEGATIVE_AXIS_SLOWDOWN_END -
+                      X_NEGATIVE_AXIS_SLOWDOWN_START) *
+                     X_AXIS_SLOWDOWN_SPEED),
+                -1000, 0);
             rotatedX = constrain(rotatedX, deccel, 600);
         }
         if (robotPosition.x < X_GOAL_WIDTH && robotPosition.x > -X_GOAL_WIDTH) {
@@ -248,7 +249,7 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
             } else if (robotPosition.y < Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) {
                 double deccel =
                     constrain(Y_AXIS_SLOWDOWN_SPEED_GOAL -
-                                  ((robotPosition.y +
+                                  ((-robotPosition.y +
                                     Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) /
                                    (Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL -
                                     Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) *
@@ -266,14 +267,15 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
                          Y_AXIS_SLOWDOWN_SPEED_EDGE),
                     0, 1000);
                 rotatedY = constrain(rotatedY, -600.0, deccel);
-            } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_EDGE) {
-                double deccel = constrain(
-                    Y_AXIS_SLOWDOWN_SPEED_EDGE -
-                        ((robotPosition.y + Y_AXIS_SLOWDOWN_START_EDGE) /
-                         (Y_AXIS_SLOWDOWN_END_EDGE -
-                          Y_AXIS_SLOWDOWN_START_EDGE) *
-                         Y_AXIS_SLOWDOWN_SPEED_EDGE),
-                    -1000, 0);
+            } else if (robotPosition.y < Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) {
+                double deccel =
+                    constrain(Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE -
+                                  ((-robotPosition.y +
+                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) /
+                                   (Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE -
+                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) *
+                                   Y_AXIS_SLOWDOWN_SPEED_EDGE),
+                              -1000, 0);
                 rotatedY = constrain(rotatedY, deccel, 600);
             }
         }

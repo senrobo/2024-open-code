@@ -8,8 +8,9 @@ SETTINGS
 */
 
 #define ROBOT1
-//#define TEST_DEFENCE_ROBOT
-// #define LOCALISE_CODE
+// #define TEST_DEFENCE_ROBOT
+#define NORMAL_CODE
+//#define LOCALISE_CODE
 
 #define DEBUG_EVERYTHING
 // #define DEBUG_LIGHT_RING
@@ -22,7 +23,7 @@ SETTINGS
     #define CATCHMENT_THRESHOLD 100
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 170 // 280
+    #define CATCHMENT_THRESHOLD 200 // 280
 #endif
 
 /*
@@ -85,7 +86,7 @@ Instructions:
 #define DEFENCE_ROBOT_LINETRACK_KI                                             \
     0 // dont touch this unless u know what u are doing
 #define DEFENCE_DEPTH_IN_LINE 0.8 // from 0 to 2
- 
+
 // REJECTION USING CAMERA LOCALISATION
 
 // WHEN ON LINE ------------------------------------
@@ -143,25 +144,29 @@ SLOWDOWN AT BOUNDARIES (ONLY APPLICABLE FOR ATTACK CODE)
 */
 
 // slowdown with localisation code
-#define X_AXIS_SLOWDOWN_START 50
-#define X_AXIS_SLOWDOWN_END   75
-#define X_AXIS_SLOWDOWN_SPEED 1
+#define X_AXIS_SLOWDOWN_START          45// 45
+#define X_AXIS_SLOWDOWN_END            80
+#define X_NEGATIVE_AXIS_SLOWDOWN_START -45 //-45
+#define X_NEGATIVE_AXIS_SLOWDOWN_END   -80
+#define X_AXIS_SLOWDOWN_SPEED          0.8F
 
 #define X_BEARING_SLOWDOWN_CONSTANT 400
 #define Y_BEARING_SLOWDOWN_CONSTANT 400
 
 // For goal
-#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.9F
-#define Y_AXIS_SLOWDOWN_START_GOAL          50
-#define Y_AXIS_SLOWDOWN_END_GOAL            85
-#define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -55
-#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -85
+#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.8F
+#define Y_AXIS_SLOWDOWN_START_GOAL          60// 45
+#define Y_AXIS_SLOWDOWN_END_GOAL            90
+#define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -60 //-5
+#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -90
 
 #define Y_AXIS_SLOWDOWN_SPEED_EDGE 0.9F
-#define Y_AXIS_SLOWDOWN_START_EDGE 50
-#define Y_AXIS_SLOWDOWN_END_EDGE   80
+#define Y_AXIS_SLOWDOWN_START_EDGE 70
+#define Y_AXIS_SLOWDOWN_END_EDGE   110
+#define Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE -70 
+#define Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE   -110
 
-#define X_GOAL_WIDTH 140
+#define X_GOAL_WIDTH 30
 
 /*
 ------------------------------------------------------------------------------------
@@ -173,7 +178,7 @@ ADVANCED
 #define ACCELERATION_ERROR 20.0
 
 #define FLICK_STRATEGY
-//#define TURN_AND_KICK_STRATEGY
+// #define TURN_AND_KICK_STRATEGY
 
 /*
 ------------------------------------------------------------------------------------
