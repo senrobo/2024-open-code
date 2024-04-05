@@ -13,11 +13,11 @@
 #define LDRPINCOUNT 36
 #define RadiusofLDR 1.0F
 
-#define ROBOT2
+#define ROBOT1
 #define DEBUG_EVERYTHING
 //#define DEBUG_LIGHT_RING
 //#define DEBUG_THRESHOLD_VALUES
-//#define DEBUG_MOVEMENT
+#define DEBUG_MOVEMENT
 
 #define BLUE_GOAL_VECTOR                                                       \
     (Vector) { 0, 113.5 }
@@ -30,7 +30,7 @@
     #define CATCHMENT_THRESHOLD 300
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 250
+    #define CATCHMENT_THRESHOLD 280
 #endif
 
 #define DEFENCE_DEPTH_IN_LINE 0.8 // from 0 to 2
@@ -40,6 +40,8 @@
         // slower)
 
 #define DEFENCE_STOP_LINE_TRACK_LIDAR_DIST 0
+
+#define ACCELERATION_ERROR 20.0
 
 
 // // slowdown with localisation code
@@ -52,11 +54,11 @@
 // #define Y_AXIS_SLOWDOWN_START_DEFENCE 82
 // #define Y_AXIS_SLOWDOWN_END_DEFENCE  84
 
-
+#define DRIBBLER_KICK_DELAY_TIME 200
 
 //#define ATTACK_BOT_CODE
 //    stealth strategy
-#define KICK_BEARING_ERROR             2
+#define KICK_BEARING_ERROR             6
 #define X_LOCALISATION_ERROR_THRESHOLD 10
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
 
@@ -72,23 +74,25 @@
 #define LOCALISE_CODE_TARGET_BEARING 0 // do this
 
 // slowdown with localisation code
-#define X_AXIS_SLOWDOWN_START 60
-#define X_AXIS_SLOWDOWN_END   70
-#define X_AXIS_SLOWDOWN_SPEED 300
+#define X_AXIS_SLOWDOWN_START 50
+#define X_AXIS_SLOWDOWN_END   75
+#define X_AXIS_SLOWDOWN_SPEED 1
 
 #define X_BEARING_SLOWDOWN_CONSTANT 400
 #define Y_BEARING_SLOWDOWN_CONSTANT 400
 
 // For goal
-#define Y_AXIS_SLOWDOWN_SPEED_GOAL 300
-#define Y_AXIS_SLOWDOWN_START_GOAL 60
-#define Y_AXIS_SLOWDOWN_END_GOAL   70
-// for Edges
-#define Y_AXIS_SLOWDOWN_SPEED_EDGE 300
-#define Y_AXIS_SLOWDOWN_START_EDGE 65
+#define Y_AXIS_SLOWDOWN_SPEED_GOAL 0.9F
+#define Y_AXIS_SLOWDOWN_START_GOAL 50
+#define Y_AXIS_SLOWDOWN_END_GOAL   85
+#define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -55
+#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -85
+
+#define Y_AXIS_SLOWDOWN_SPEED_EDGE 0.9F
+#define Y_AXIS_SLOWDOWN_START_EDGE 50
 #define Y_AXIS_SLOWDOWN_END_EDGE   80
 
-#define X_GOAL_WIDTH 50
+#define X_GOAL_WIDTH 140
 
 // for returning back to original position if ball is in goal
 #define X_AXIS_BALL_RANGE 15
@@ -97,13 +101,13 @@
 // strategy 2
 #define X_BALL_STRATEGY2_RANGE 30 // 30
 #define Y_BALL_STRATEGY2       -70//-70
-#define MIN_TURN_AROUND_TIME   50
+#define MIN_TURN_AROUND_TIME   5000
 
 // default robot position
 #define DEFAULT_POSITION                                                       \
     (Point) { 30, 30}
 
-#define MIN_KICK_TIME 200
+#define MIN_KICK_TIME 2000
 
 // dribbler settings
 #define DRIBBLER_PWM_PIN        0
@@ -111,7 +115,7 @@
 #define DRIBBLER_UPPER_LIMIT    230
 #define BRUSHLESS_DEFAULT_SPEED 155// 220
 #define BRUSHLESS_FAST_SPEED    155
-#define CATCH_BALL_DELAY_TIME   1000 // in millis
+#define CATCH_BALL_DELAY_TIME   500 // in millis
 
 // lidars processing settings
 #define X_AXIS_LIDARS_POSITIONAL_OFFSET                                        \

@@ -11,6 +11,7 @@
 #include <Wire.h>
 #include <iostream>
 #include <math.h>
+#include "shared.h"
 
 #define TEENSY
 
@@ -122,8 +123,8 @@ Vector localize() {
         (processedValues.yellowgoal_exists == 1 &&
          processedValues.bluegoal_exists == 0)) {
         sensorfusion.updateSensorValues(
-            0, 0, 0, 0, sensorValues.lidardist[0], sensorValues.lidardist[2],
-            sensorValues.lidardist[3], sensorValues.lidardist[1],
+            0, 0, 0, 0, sensorValues.y_frontrelativetofield, sensorValues.y_backrelativetofield,
+            sensorValues.x_leftrelativetofield, sensorValues.x_rightrelativetofield,
             localizeWithOffensiveGoal().x(), localizeWithOffensiveGoal().y());
         Vector localisation = sensorfusion.updateLocalisation();
         Serial.print("f");
@@ -133,17 +134,21 @@ Vector localize() {
                (processedValues.bluegoal_exists == 1 &&
                 processedValues.yellowgoal_exists == 0)) {
         sensorfusion.updateSensorValues(
-            0, 0, 0, 0, sensorValues.lidardist[0], sensorValues.lidardist[2],
-            sensorValues.lidardist[3], sensorValues.lidardist[1],
+            0, 0, 0, 0, sensorValues.y_frontrelativetofield,
+            sensorValues.y_backrelativetofield,
+            sensorValues.x_leftrelativetofield,
+            sensorValues.x_rightrelativetofield,
             localizeWithDefensiveGoal().x(), localizeWithDefensiveGoal().y());
         Vector localisation = sensorfusion.updateLocalisation();
         Serial.print("b");
         return localisation;
     } else {
         sensorfusion.updateSensorValues(
-            0, 0, 0, 0, sensorValues.lidardist[0], sensorValues.lidardist[2],
-            sensorValues.lidardist[3], sensorValues.lidardist[1],
-            localizeWithBothGoals().x(), localizeWithBothGoals().y());
+            0, 0, 0, 0, sensorValues.y_frontrelativetofield,
+            sensorValues.y_backrelativetofield,
+            sensorValues.x_leftrelativetofield,
+            sensorValues.x_rightrelativetofield, localizeWithBothGoals().x(),
+            localizeWithBothGoals().y());
         Vector localisation = sensorfusion.updateLocalisation();
         Serial.print("fb");
         return localisation;
@@ -200,7 +205,7 @@ double leftVariance = 400;
 double rightVariance = 400;
 
 void loop() {
-    double dt = loopTimeinMillis();
+    double dt = loopTimeinmicros();
     CameraTeensySerial.update();
     LidarTeensySerial.update();
     BluetoothTeensySerial.update();
@@ -231,13 +236,13 @@ void loop() {
                                               : rightVariance = 100000;
     (processedValues.lidarConfidence[2] == 1) ? backVariance = 3
                                               : backVariance = 100000;
-    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 0
+    (processedValues.lidarConfidence[3] == 1) ? leftVariance = 3
                                               : leftVariance = 100000;
 
     sensorfusion.updateConstants(frontVariance, backVariance, leftVariance,
                                  rightVariance, 10, 15);
 
-    ballposition.updateConstants(dt / 1000);
+    ballposition.updateConstants(dt / 1000000);
     ballposition.updateSensorMeasurement(
         sensorValues.ball_relativeposition.x(),
         sensorValues.ball_relativeposition.y());
@@ -246,6 +251,7 @@ void loop() {
     Vector robotPosition = localize();
     processedValues.robot_position = {robotPosition.x(), robotPosition.y()};
 
+    
     if (teensyBluetooth.currentMode == 0 && 
     processedValues.ball_relativeposition.angle < 20 && 
     processedValues.ball_relativeposition.angle > -20 &&
@@ -259,6 +265,8 @@ void loop() {
     if (teensyBluetooth.currentMode == 0 && teensyBluetooth.switchMode == 1){
         processedValues.attackMode = 1;
     }
+
+    //processedValues.attackMode = 0;
 
     Serial.print(" | bearing: ");
     printDouble(Serial, processedValues.relativeBearing, 3, 1);

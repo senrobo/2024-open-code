@@ -54,14 +54,14 @@ void setup() {
 
         BLEDevice::init("ESP32");
 
-    // Create the BLE Server
+
     pServer = BLEDevice::createServer();
     pServer->setCallbacks(new MyServerCallbacks());
 
-    // Create the BLE Service
+ 
     BLEService *pService = pServer->createService(SERVICE_UUID);
 
-    // Create a BLE Characteristic
+
     TxAttackMode = pService->createCharacteristic(
         TxAttackModeUUID, BLECharacteristic::PROPERTY_NOTIFY);
 
@@ -70,12 +70,11 @@ void setup() {
                               BLECharacteristic::PROPERTY_WRITE |
                               BLECharacteristic::PROPERTY_NOTIFY);
 
-    // Create a BLE Descriptor
+
     pDescr_1 = new BLEDescriptor((uint16_t)0x2901);
     pDescr_1->setValue("A very interesting variable");
     TxAttackMode->addDescriptor(pDescr_1);
 
-    // Add the BLE2902 Descriptor because we are using "PROPERTY_NOTIFY"
     pBLE2902_1 = new BLE2902();
     pBLE2902_1->setNotifications(true);
     TxAttackMode->addDescriptor(pBLE2902_1);
@@ -84,7 +83,7 @@ void setup() {
     pBLE2902_2->setNotifications(true);
     RxAttackMode->addDescriptor(pBLE2902_2);
 
-    // Start the service
+ 
     pService->start();
 
     // Start advertising
@@ -124,13 +123,13 @@ void loop() {
     // Disconnecting
     if (!deviceConnected && oldDeviceConnected) {
         delay(500); // give the bluetooth stack the chance to get things
-        pServer->startAdvertising(); // restart advertising
+        pServer->startAdvertising(); 
         Serial.println("start advertising");
         oldDeviceConnected = deviceConnected;
     }
     // Connecting
     if (deviceConnected && !oldDeviceConnected) {
-        // do stuff here on connecting
+       
         oldDeviceConnected = deviceConnected;
     }
 

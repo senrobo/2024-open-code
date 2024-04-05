@@ -35,7 +35,7 @@ double ballMirrorMapping(double distance) {
 Vector localizeWithOffensiveGoal() {
     const Vector realGoalToCenter = {0, 113.5};
     const Vector yellow_goalactualposition = {
-        sensorValues.yellowgoal_relativeposition.angle -
+        sensorValues.yellowgoal_relativeposition.angle +
             sensorValues.relativeBearing,
         sensorValues.yellowgoal_relativeposition.distance};
     const auto fakeCenter = - yellow_goalactualposition + realGoalToCenter;
@@ -46,7 +46,7 @@ Vector localizeWithOffensiveGoal() {
 Vector localizeWithDefensiveGoal() {
     const Vector  realGoalToCenter = {180, 113.5};
     const Vector blue_goalactualposition = {
-        sensorValues.bluegoal_relativeposition.angle -
+        sensorValues.bluegoal_relativeposition.angle +
             sensorValues.relativeBearing,
         sensorValues.bluegoal_relativeposition.distance};
     const auto fakeCenter = - blue_goalactualposition + realGoalToCenter;
@@ -60,10 +60,6 @@ Vector localizeWithBothGoals() {
 };
 
 void processLidars() {
-    double x_leftrelativetofield = 0;
-    double x_rightrelativetofield = 0;
-    double y_frontrelativetofield = 0;
-    double y_backrelativetofield = 0;
     Point CameraPosition;
     
     for (int i = 0; i < 4; i++) {
@@ -72,64 +68,73 @@ void processLidars() {
     }
 
     if (sensorValues.relativeBearing <= 45 && sensorValues.relativeBearing > -45) {
-        x_leftrelativetofield = (processedValues.lidarDistance[3] +
+        sensorValues.x_leftrelativetofield = (processedValues.lidarDistance[3] +
                                  X_AXIS_LIDARS_POSITIONAL_OFFSET) *
                                 cosd(sensorValues.relativeBearing);
-        x_rightrelativetofield = (processedValues.lidarDistance[1] +
-                                  X_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                 cosd(sensorValues.relativeBearing);
-        y_frontrelativetofield = (processedValues.lidarDistance[0] +
-                                  Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                 cosd(sensorValues.relativeBearing);
-        y_backrelativetofield = (processedValues.lidarDistance[2] +
-                                 Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                cosd(sensorValues.relativeBearing);
+        sensorValues.x_rightrelativetofield =
+            (processedValues.lidarDistance[1] +
+             X_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing);
+        sensorValues.y_frontrelativetofield =
+            (processedValues.lidarDistance[0] +
+             Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing);
+        sensorValues.y_backrelativetofield = (processedValues.lidarDistance[2] +
+                                              Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
+                                             cosd(sensorValues.relativeBearing);
     } else if (sensorValues.relativeBearing > 45 && sensorValues.relativeBearing <= 135) {
-        x_leftrelativetofield = (processedValues.lidarDistance[2] +
-                                 X_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                cosd(sensorValues.relativeBearing - 90);
-        x_rightrelativetofield = (processedValues.lidarDistance[0] +
-                                  X_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                 cosd(sensorValues.relativeBearing - 90);
-        y_frontrelativetofield = (processedValues.lidarDistance[3] +
-                                  Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                 cosd(sensorValues.relativeBearing - 90);
-        y_backrelativetofield =
+        sensorValues.x_leftrelativetofield =
+            (processedValues.lidarDistance[2] +
+             X_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing - 90);
+        sensorValues.x_rightrelativetofield =
+            (processedValues.lidarDistance[0] +
+             X_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing - 90);
+        sensorValues.y_frontrelativetofield =
+            (processedValues.lidarDistance[3] +
+             Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing - 90);
+        sensorValues.y_backrelativetofield =
             (processedValues.lidarDistance[1] +
              Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
             cosd(clipAngleto180degrees(sensorValues.relativeBearing - 90));
     } else if (sensorValues.relativeBearing > 135 ||
                sensorValues.relativeBearing <= -135) {
-        x_leftrelativetofield =
+        sensorValues.x_leftrelativetofield =
             (processedValues.lidarDistance[1] +
              X_AXIS_LIDARS_POSITIONAL_OFFSET) *
             cosd(clipAngleto180degrees(sensorValues.relativeBearing - 180));
-        x_rightrelativetofield =
+        sensorValues.x_rightrelativetofield =
             (processedValues.lidarDistance[3] +
              X_AXIS_LIDARS_POSITIONAL_OFFSET) *
             cosd(clipAngleto180degrees(sensorValues.relativeBearing - 180));
-        y_frontrelativetofield =
+        sensorValues.y_frontrelativetofield =
             (processedValues.lidarDistance[2] +
              Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
             cosd(clipAngleto180degrees(sensorValues.relativeBearing - 180));
-        y_backrelativetofield =
+        sensorValues.y_backrelativetofield =
             (processedValues.lidarDistance[0] +
              Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
             cosd(clipAngleto180degrees(sensorValues.relativeBearing - 180));
     } else if (sensorValues.relativeBearing <= -45 &&
                sensorValues.relativeBearing > -135) {
-        x_leftrelativetofield = (processedValues.lidarDistance[0] +
-                                 X_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                cosd(sensorValues.relativeBearing + 90);
-        x_rightrelativetofield = (processedValues.lidarDistance[2] +
-                                  X_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                 cosd(sensorValues.relativeBearing + 90);
-        y_frontrelativetofield = (processedValues.lidarDistance[1] +
-                                  Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                 cosd(sensorValues.relativeBearing + 90);
-        y_backrelativetofield = (processedValues.lidarDistance[3] +
-                                 Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
-                                cosd(sensorValues.relativeBearing + 90);
+        sensorValues.x_leftrelativetofield =
+            (processedValues.lidarDistance[0] +
+             X_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing + 90);
+        sensorValues.x_rightrelativetofield =
+            (processedValues.lidarDistance[2] +
+             X_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing + 90);
+        sensorValues.y_frontrelativetofield =
+            (processedValues.lidarDistance[1] +
+             Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing + 90);
+        sensorValues.y_backrelativetofield =
+            (processedValues.lidarDistance[3] +
+             Y_AXIS_LIDARS_POSITIONAL_OFFSET) *
+            cosd(sensorValues.relativeBearing + 90);
     }
 
     if ((sensorValues.yellowgoal_relativeposition.distance < 90 &&
@@ -149,21 +154,21 @@ void processLidars() {
                           localizeWithBothGoals().y()};
     }
 
-    if ((x_leftrelativetofield + x_rightrelativetofield) <
-            WIDTH_OF_FIELD - WIDTH_ERROR ||
-        (x_leftrelativetofield + x_rightrelativetofield) >
-            WIDTH_OF_FIELD + WIDTH_ERROR) {
+    if ((sensorValues.x_leftrelativetofield +
+         sensorValues.x_rightrelativetofield) < WIDTH_OF_FIELD - WIDTH_ERROR ||
+        (sensorValues.x_leftrelativetofield +
+         sensorValues.x_rightrelativetofield) > WIDTH_OF_FIELD + WIDTH_ERROR) {
         processedValues.lidarConfidence[3] =
-            (x_leftrelativetofield - (WIDTH_OF_FIELD / 2) >=
+            (sensorValues.x_leftrelativetofield - (WIDTH_OF_FIELD / 2) >=
                  CameraPosition.x - X_CAMERA_ERROR &&
-             x_leftrelativetofield - (WIDTH_OF_FIELD / 2) <=
+             sensorValues.x_leftrelativetofield - (WIDTH_OF_FIELD / 2) <=
                  CameraPosition.x + X_CAMERA_ERROR)
                 ? 1
                 : 0;
         processedValues.lidarConfidence[1] =
-            (-x_rightrelativetofield + (WIDTH_OF_FIELD / 2) >=
+            (-sensorValues.x_rightrelativetofield + (WIDTH_OF_FIELD / 2) >=
                  CameraPosition.x - X_CAMERA_ERROR &&
-             -x_rightrelativetofield + (WIDTH_OF_FIELD / 2) <=
+             -sensorValues.x_rightrelativetofield + (WIDTH_OF_FIELD / 2) <=
                  CameraPosition.x + X_CAMERA_ERROR)
                 ? 1
                 : 0;
@@ -172,21 +177,23 @@ void processLidars() {
         processedValues.lidarConfidence[3] = 1;
     }
 
-    if ((y_backrelativetofield + y_frontrelativetofield) <
+    if ((sensorValues.y_backrelativetofield +
+         sensorValues.y_frontrelativetofield) <
             LENGTH_OF_FIELD - LENGTH_ERROR ||
-        (y_backrelativetofield + y_frontrelativetofield) >
+        (sensorValues.y_backrelativetofield +
+         sensorValues.y_frontrelativetofield) >
             LENGTH_OF_FIELD + LENGTH_ERROR) {
         processedValues.lidarConfidence[0] =
-            (-y_frontrelativetofield + (LENGTH_OF_FIELD / 2) >=
+            (-sensorValues.y_frontrelativetofield + (LENGTH_OF_FIELD / 2) >=
                  CameraPosition.y - Y_CAMERA_ERROR &&
-             -y_frontrelativetofield + (LENGTH_OF_FIELD / 2) <=
+             -sensorValues.y_frontrelativetofield + (LENGTH_OF_FIELD / 2) <=
                  CameraPosition.y + Y_CAMERA_ERROR)
                 ? 1
                 : 0;
         processedValues.lidarConfidence[2] =
-            (y_backrelativetofield - (LENGTH_OF_FIELD / 2) <=
+            (sensorValues.y_backrelativetofield - (LENGTH_OF_FIELD / 2) <=
                  CameraPosition.y + Y_CAMERA_ERROR &&
-             y_backrelativetofield - (LENGTH_OF_FIELD / 2) >=
+             sensorValues.y_backrelativetofield - (LENGTH_OF_FIELD / 2) >=
                  CameraPosition.y - Y_CAMERA_ERROR)
                 ? 1
                 : 0;

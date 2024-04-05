@@ -82,7 +82,7 @@ void Movement::updateParameters(double actualbearing, double actualdirection,
 
 void Movement::setconstantDirection(Direction::constant params) {
     _targetdirection = params.value;
-    _accelerate == true;
+    _accelerate = false;
 };
 
 void Movement::setmovetoPointDirection(Direction::movetoPoint params) {
@@ -90,7 +90,7 @@ void Movement::setmovetoPointDirection(Direction::movetoPoint params) {
         (Vector::fromPoint(params.destination) - params.robotCoordinate).angle -
         params.robotBearing);
     
-    _accelerate == true;
+    _accelerate = false;
 };
 
 void Movement::setlinetrackDirection(Direction::linetrack params) {
@@ -103,7 +103,7 @@ void Movement::setlinetrackDirection(Direction::linetrack params) {
         _targetdirection = (correction * -90) + params.angleBisector + 90;
     }
 
-    _accelerate == false;
+    _accelerate = false;
 }
 
 // In Movement.cpp
@@ -178,7 +178,12 @@ void Movement::setBearingSettings(double minV, double maxV, double KP,
     bearingController.updateGains(KP, KD, KI, 0.2);
 };
 
-void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
+void Movement::setAcceleration(bool accelerate, double accelerationMultiplier){
+    _accelerate = accelerate;
+    _accelerationMultiplier = accelerationMultiplier;
+}
+
+    void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     bearingController.updateSetpoint(_targetbearing);
 
     if (_targetbearing <= 90 && _targetbearing >= -90) {
@@ -199,8 +204,8 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     double y = cosd(_targetdirection);
 
     double bearingRadians = bearing * M_PI / 180.0;
-    double rotationMatrix[2][2] = {{cos(bearingRadians), -sin(bearingRadians)},
-                                   {sin(bearingRadians), cos(bearingRadians)}};
+    double rotationMatrix[2][2] = {{cosd(bearing), -sind(bearing)},
+                                   {sind(bearing), cosd(bearing)}};
 
     double rotatedX = rotationMatrix[0][0] * x + rotationMatrix[0][1] * y;
     double rotatedY = rotationMatrix[1][0] * x + rotationMatrix[1][1] * y;
@@ -217,7 +222,7 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
                           0, 1000);
 
             rotatedX = constrain(rotatedX, -700.0, deccel);
-        } else {
+        } else if (robotPosition.x < -X_AXIS_SLOWDOWN_START){
 
             double deccel =
                 constrain(X_AXIS_SLOWDOWN_SPEED -
@@ -237,14 +242,16 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
                          Y_AXIS_SLOWDOWN_SPEED_GOAL),
                     0, 1000);
                 rotatedY = constrain(rotatedY, -600.0, deccel);
-            } else if (robotPosition.y < -Y_AXIS_SLOWDOWN_START_GOAL) {
-                double deccel = constrain(
-                    Y_AXIS_SLOWDOWN_SPEED_GOAL -
-                        ((robotPosition.y + Y_AXIS_SLOWDOWN_START_GOAL) /
-                         (Y_AXIS_SLOWDOWN_END_GOAL -
-                          Y_AXIS_SLOWDOWN_START_GOAL) *
-                         Y_AXIS_SLOWDOWN_SPEED_GOAL),
-                    -1000, 0);
+                Serial.println("sad");
+            } else if (robotPosition.y < Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) {
+                double deccel =
+                    constrain(Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                                  ((robotPosition.y +
+                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) /
+                                   (Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL -
+                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) *
+                                   Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                              -1000, 0);
                 rotatedY = constrain(rotatedY, deccel, 600);
             }
         } else {
@@ -278,18 +285,9 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
         y = adjustedY;
     }
 
-    if (_accelerate == true){
-        if (_actualvelocity > _targetvelocity + 50) {
-            _actualvelocity -= _targetvelocity * 0.04;
-        } else if (_actualvelocity < _targetvelocity - 50) {
-            _actualvelocity += dt_micros * 0.04;
-        } else {
-            _actualvelocity = _targetvelocity;
-        }
-    }
-    else{
-        _actualvelocity = _targetvelocity;
-    }
+    
+     _actualvelocity = _targetvelocity;
+    
 
 
         const auto transformspeed = [this](double velocityDirection,
@@ -300,15 +298,53 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
 
     double angularComponent = _movingbearing * 1.3;
 
-    double FLSpeed =
+
+    double FLSp =
         transformspeed(x * SIN34 + y * COS56, angularComponent) * FL_MULTIPLIER;
-    double FRSpeed = transformspeed(x * -SIN34 + y * COS56, -angularComponent) *
+    double FRSp = transformspeed(x * -SIN34 + y * COS56, -angularComponent) *
                      FR_MULTIPLIER;
-    double BRSpeed = transformspeed(x * SIN34 + y * COS56, -angularComponent) *
+    double BRSp = transformspeed(x * SIN34 + y * COS56, -angularComponent) *
                      BR_MULTIPLIER;
-    double BLSpeed = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
+    double BLSp = transformspeed(x * -SIN34 + y * COS56, angularComponent) *
                      BL_MULTIPLIER;
 
+    _accelerate == false;
+    if (_accelerate == true) {
+        if (FLSpeed > FLSp + ACCELERATION_ERROR) {
+            FLSpeed -= dt_micros * _accelerationMultiplier;
+        } else if (FLSpeed < FLSp - ACCELERATION_ERROR) {
+            FLSpeed += dt_micros * _accelerationMultiplier;
+        } else {
+            FLSpeed = FLSp;
+        }
+        if (FRSpeed > FRSp + ACCELERATION_ERROR) {
+            FRSpeed -= dt_micros * _accelerationMultiplier;
+        } else if (FRSpeed < FRSp - ACCELERATION_ERROR) {
+            FRSpeed += dt_micros * _accelerationMultiplier;
+        } else {
+            FRSpeed = FRSp;
+        }
+        if (BLSpeed > BLSp + ACCELERATION_ERROR) {
+            BLSpeed -= dt_micros * _accelerationMultiplier;
+        } else if (BLSpeed < BLSp - ACCELERATION_ERROR) {
+            BLSpeed += dt_micros * _accelerationMultiplier;
+        } else {
+            BLSpeed = BLSp;
+        }
+        if (BRSpeed > BRSp + ACCELERATION_ERROR) {
+            BRSpeed -= dt_micros * _accelerationMultiplier;
+        } else if (BRSpeed < BRSp - ACCELERATION_ERROR) {
+            BRSpeed += dt_micros * _accelerationMultiplier;
+        } else {
+            BRSpeed = BRSp;
+        }
+    }
+    else{
+        FLSpeed = FLSp;
+        BRSpeed = BRSp;
+        BLSpeed = BLSp;
+        FRSpeed = FRSp;
+    }
     // if (FLSpeed < 50 && FLSpeed > -50) { FLSpeed = 0; }
     // if (FRSpeed < 50 && FRSpeed > -50) { FRSpeed = 0; }
     // if (BLSpeed < 50 && BLSpeed > -50) { BLSpeed = 0; }
@@ -367,14 +403,21 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     printSerial(_targetdirection);
     Serial.print(" | TargetVelocity: ");
     printSerial(_targetvelocity);
+    Serial.print(" | XComponent: ");
+    printDouble(Serial,x,3,3);
+    Serial.print(" | YComponent: ");
+    printDouble(Serial, y, 3, 3);
     Serial.print(" | YPosition: ");
     printSerial(robotPosition.y);
-    Serial.print(" | Y: ");
-    printSerial(Y_AXIS_SLOWDOWN_SPEED -
-                ((robotPosition.y - Y_AXIS_SLOWDOWN_START) /
-                 (Y_AXIS_SLOWDOWN_END - Y_AXIS_SLOWDOWN_START) *
-                 Y_AXIS_SLOWDOWN_SPEED));
-    Serial.println(" ");
+    Serial.print(" | Slowdown");
+    printSerial(
+        constrain(Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                      ((robotPosition.y - Y_AXIS_SLOWDOWN_START_GOAL) /
+                       (Y_AXIS_SLOWDOWN_END_GOAL - Y_AXIS_SLOWDOWN_START_GOAL) *
+                       Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                  0, 1000));
+
+        Serial.println(" ");
 
 #endif
 };

@@ -89,13 +89,11 @@ bool connectToServer() {
 
     pClient->setClientCallbacks(new MyClientCallback());
 
-    // Connect to the remove BLE Server.
-    pClient->connect(myDevice); // if you pass BLEAdvertisedDevice instead of
-                                // address, it will be recognized type of peer
-                                // device address (public or private)
+
+    pClient->connect(myDevice); 
     Serial.println(" - Connected to server");
 
-    // Obtain a reference to the service we are after in the remote BLE server.
+ 
     BLERemoteService *pRemoteService = pClient->getService(serviceUUID);
     if (pRemoteService == nullptr) {
         Serial.print("Failed to find our service UUID: ");
@@ -121,17 +119,15 @@ bool connectToServer() {
     return true;
 }
 
-// Scan for BLE servers and find the first one that advertises the service we
-// are looking for.
+
 class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
-    // Called for each advertising BLE server.
+   
     void onResult(BLEAdvertisedDevice advertisedDevice) {
         Serial.print("BLE Advertised Device found: ");
         Serial.println(advertisedDevice.toString().c_str());
 
 \
-        // We have found a device, let us now see if it contains the service we
-        // are looking for.
+    
         if (advertisedDevice.haveServiceUUID() &&
             advertisedDevice.isAdvertisingService(serviceUUID)) {
 
@@ -141,7 +137,6 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks {
             doScan = true;
 
         } // Found our server
-    }     // onResult
-};        // MyAdvertisedDeviceCallbacks
-
+    }     
+};        
 #endif

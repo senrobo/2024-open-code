@@ -9,18 +9,18 @@
 
 
 // Initialize all pointers
-BLEServer *pServer = NULL;              // Pointer to the server
-BLECharacteristic *TxAttackMode = NULL; // Pointer to Characteristic 1
-BLECharacteristic *RxAttackMode = NULL; // Pointer to Characteristic 2
+BLEServer *pServer = NULL;              
+BLECharacteristic *TxAttackMode = NULL;
+BLECharacteristic *RxAttackMode = NULL;
 BLECharacteristic *TxPermissiontoSwitch = NULL;
 BLECharacteristic *RxPermissiontoSwitch = NULL;
 BLECharacteristic *TxBallDistance = NULL;
 BLECharacteristic *RxBallDistance = NULL;
 BLECharacteristic *TxBallAngle = NULL;
 BLECharacteristic *RxBallAngle = NULL;
-BLEDescriptor *pDescr_1; // Pointer to Descriptor of Characteristic 1
-BLE2902 *pBLE2902_1;     // Pointer to BLE2902 of Characteristic 1
-BLE2902 *pBLE2902_2;     // Pointer to BLE2902 of Characteristic 2
+BLEDescriptor *pDescr_1; 
+BLE2902 *pBLE2902_1;    
+BLE2902 *pBLE2902_2;    
 
 // Some variables to keep track on device connected
 bool deviceConnected = false;

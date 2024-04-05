@@ -30,6 +30,10 @@ struct SensorValues {
     Vector bluegoal_relativeposition;
     Vector ball_relativeposition;
     int lidardist[4];
+    double x_leftrelativetofield = 0;
+    double x_rightrelativetofield = 0;
+    double y_frontrelativetofield = 0;
+    double y_backrelativetofield = 0;
 };
 
 

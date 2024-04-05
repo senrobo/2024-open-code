@@ -12,11 +12,13 @@
 namespace Direction {
 struct constant {
     double value;
+
 };
 struct movetoPoint {
     Vector robotCoordinate;
     Point destination;
     double robotBearing;
+
 };
 struct linetrack {
     double lineDepth;
@@ -73,6 +75,8 @@ class Movement {
     void setCurveTracking(Point robotPosition, double r, double h, double k,
                           bool track_left);
 
+    void setAcceleration(bool accelerate, double accelerationMultiplier);
+
     // PID Controllera
     PIDController curveTrackingController =
         PIDController(0.0, -180, 180, 1.0, 0.1, 0.0, 0, 1, 0.1);
@@ -100,6 +104,7 @@ class Movement {
     double _targetbearing;
     double _targetvelocity;
     bool _accelerate;
+    double _accelerationMultiplier;
 
     //
     double _movingdirection;
@@ -121,6 +126,12 @@ class Movement {
     double _actualvelocity;
     double _actualbearing;
     double _actualdirection;
+
+    double FLSpeed;
+    double FRSpeed;
+    double BLSpeed;
+    double BRSpeed;
 };
+
 
 #endif
