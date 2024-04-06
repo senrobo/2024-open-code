@@ -190,6 +190,7 @@ void loop() {
     execution.attackMode = 0;
 #endif
 
+
     if (solenoid.kick == 1024 ||
         millis() - execution.lastkickTime < MIN_KICK_TIME) {
         execution.dribblerSpeed = 130;
@@ -479,11 +480,11 @@ void loop() {
             if (ballposition.x >= 0) {
                 execution.targetBearing = 180;
                 execution.strategy2Quadrant = 1;
-                KICK_POINT = {50, 40};
+                KICK_POINT = {50, 30};
             } else if (ballposition.x < 0) {
                 execution.targetBearing = 180;
                 execution.strategy2Quadrant = 4;
-                KICK_POINT = {-50, 40};
+                KICK_POINT = {-50, 30};
             }
         } else if (execution.strategy == 1) {
             execution.targetBearing = 0;
@@ -536,7 +537,7 @@ void loop() {
 
                 movement.setconstantVelocity(
                     Velocity::constant{movement.applySigmoid(
-                        600, 250,
+                        700, 250,
                         curveAroundBallMultiplier(
                             processedValues.ball_relativeposition.angle,
                             processedValues.ball_relativeposition.distance - 20,
@@ -551,7 +552,19 @@ void loop() {
             }
         } else if (processedValues.averageCatchmentValues <=
                    CATCHMENT_THRESHOLD) { // 720
-
+            if (execution.strategy2GotBall == false){
+                if (ballposition.x >= 0) {
+                    execution.targetBearing = 180;
+                    execution.strategy2Quadrant = 1;
+                    KICK_POINT = {50, 30};
+                } else if (ballposition.x < 0) {
+                    execution.targetBearing = 180;
+                    execution.strategy2Quadrant = 4;
+                    KICK_POINT = {-50, 30};
+                }
+            }
+            execution.strategy2GotBall = true;
+        
             if (execution.strategy == 1) {
                 movement.setBearingSettings(-80, 80, 3, 0, 0);
 
@@ -618,6 +631,7 @@ void loop() {
             }
 
             else if (execution.strategy == 2) {
+                
                 execution.dribblerSpeed = 165;
                 if (processedValues.relativeBearing <
                         processedValues.yellowgoal_relativeposition.angle +
@@ -790,6 +804,9 @@ void loop() {
         processedValues.relativeBearing, dt_micros);
 #ifdef ROBOT1
     execution.dribblerSpeed += 60;
+#endif
+#ifdef ROBOT2
+    execution.dribblerSpeed += 50;
 #endif
     if (execution.dribblerSpeedAccel < execution.dribblerSpeed - 5) {
         execution.dribblerSpeedAccel += dt_micros * 0.00002;

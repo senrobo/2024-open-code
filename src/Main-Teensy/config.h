@@ -8,7 +8,7 @@ SETTINGS
 */
 
 #define ROBOT1
-#define TEST_DEFENCE_ROBOT
+//#define TEST_DEFENCE_ROBOT
 #define NORMAL_CODE
 //#define LOCALISE_CODE
 
@@ -20,10 +20,10 @@ SETTINGS
 //  #define DEBUG_LIDAR
 
 #ifdef ROBOT2
-    #define CATCHMENT_THRESHOLD 85
+    #define CATCHMENT_THRESHOLD 120
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 280 // 280
+    #define CATCHMENT_THRESHOLD 240 // 280
 #endif
 
 /*
@@ -81,8 +81,8 @@ Instructions:
     -0.3 // max offset direction in negative direction
 #define MAX_LINETRACK_CORRECTION                                               \
     0.3 // max offset direction in positive direction
-#define DEFENCE_ROBOT_LINETRACK_KP 0.5
-#define DEFENCE_ROBOT_LINETRACK_KD 0.05
+#define DEFENCE_ROBOT_LINETRACK_KP 0.4
+#define DEFENCE_ROBOT_LINETRACK_KD 0.04
 #define DEFENCE_ROBOT_LINETRACK_KI                                             \
     0 // dont touch this unless u know what u are doing
 #define DEFENCE_DEPTH_IN_LINE 0.8 // from 0 to 2
@@ -125,8 +125,8 @@ DONT TOUCH WITHOUT ASKING ME
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
 
 // strategy 2
-#define X_BALL_STRATEGY2_RANGE 30000000  // 30
-#define Y_BALL_STRATEGY2       -70000000 //-70
+#define X_BALL_STRATEGY2_RANGE 30  // 30
+#define Y_BALL_STRATEGY2       -70 //-70
 #define MIN_TURN_AROUND_TIME   5000
 
 /*
@@ -145,19 +145,19 @@ SLOWDOWN AT BOUNDARIES (ONLY APPLICABLE FOR ATTACK CODE)
 
 // slowdown with localisation code
 #define X_AXIS_SLOWDOWN_START          45// 45
-#define X_AXIS_SLOWDOWN_END            80
+#define X_AXIS_SLOWDOWN_END            90
 #define X_NEGATIVE_AXIS_SLOWDOWN_START -45 //-45
-#define X_NEGATIVE_AXIS_SLOWDOWN_END   -80
-#define X_AXIS_SLOWDOWN_SPEED          0.8F
+#define X_NEGATIVE_AXIS_SLOWDOWN_END   -90
+#define X_AXIS_SLOWDOWN_SPEED          1.0F
 
 // For goal
-#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.8F
+#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.5F
 #define Y_AXIS_SLOWDOWN_START_GOAL          60// 45
 #define Y_AXIS_SLOWDOWN_END_GOAL            90
 #define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -60 //-5
 #define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -90
 
-#define Y_AXIS_SLOWDOWN_SPEED_EDGE 0.9F
+#define Y_AXIS_SLOWDOWN_SPEED_EDGE 0.7F
 #define Y_AXIS_SLOWDOWN_START_EDGE 70
 #define Y_AXIS_SLOWDOWN_END_EDGE   110
 #define Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE -70 

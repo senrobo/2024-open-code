@@ -185,6 +185,7 @@ struct ProcessedValues {
     int ballExists = 0;
     int yellowgoal_exists = 0;
     int bluegoal_exists = 0;
+
     int lidarDistance[4];
     double lidarConfidence[4];
     double relativeBearing;
@@ -220,7 +221,7 @@ struct Execution {
     double dribblerSpeed = 0;
     double dribblerSpeedAccel = 140;
     int attackMode = 1;
-    
+    bool strategy2GotBall = 0;
 };
 
 // global variables

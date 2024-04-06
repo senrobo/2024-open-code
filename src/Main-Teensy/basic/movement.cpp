@@ -396,10 +396,10 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     digitalWriteFast(BL_IN1_PIN, BLSpeed > 0 ? LOW : HIGH);
     digitalWriteFast(BL_IN2_PIN, BLSpeed > 0 ? HIGH : LOW);
 
-    analogWrite(FL_PWM_PIN, constrain(abs(FLSpeed), -600, 600));
-    analogWrite(FR_PWM_PIN, constrain(abs(FRSpeed), -600, 600));
-    analogWrite(BL_PWM_PIN, constrain(abs(BLSpeed), -600, 600));
-    analogWrite(BR_PWM_PIN, constrain(abs(BRSpeed), -600, 600));
+    analogWrite(FL_PWM_PIN, constrain(abs(FLSpeed), -800, 800));
+    analogWrite(FR_PWM_PIN, constrain(abs(FRSpeed), -800, 800));
+    analogWrite(BL_PWM_PIN, constrain(abs(BLSpeed), -800, 800));
+    analogWrite(BR_PWM_PIN, constrain(abs(BRSpeed), -800, 800));
 #endif
 #ifdef ROBOT2
     digitalWriteFast(FL_IN1_PIN, FLSpeed > 0 ? HIGH : LOW);
