@@ -177,13 +177,13 @@ double ballAngleOffset(double distance, double direction) {
     if (direction < 50) {
         double constant = 0;
         double angleoffset =
-            constrain(direction * 2.5, -90, 90) *
+            constrain(direction * SMALL_ANGLE_OFFSET_MULTIPLIER, -90, 90) *
             fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)),
                  1);
         return angleoffset;
     } else {
         double angleoffset =
-            constrain(direction * 0.6, -90, 90) *
+            constrain(direction * LARGE_ANGLE_OFFSET_MULTIPLIER, -90, 90) *
             fmin(powf(exp(1), OFFSET_MULTIPLIER * (START_OFFSET - distance)),
                  1);
         return angleoffset;

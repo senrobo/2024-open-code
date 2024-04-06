@@ -6,10 +6,10 @@
 SETTINGS
 ------------------------------------------------------------------------------------
 */
-#define ROBOT1
+#define ROBOT2
 //#define TEST_DEFENCE_ROBOT
-#define DEFENCE_CODE
-//#define ATTACK_CODE
+//#define DEFENCE_CODE
+#define ATTACK_CODE
 #define NORMAL_CODE
 //#define LOCALISE_CODE
 
@@ -22,7 +22,7 @@ SETTINGS
 //  #define DEBUG_LIDAR
 
 #ifdef ROBOT2
-    #define CATCHMENT_THRESHOLD 120
+    #define CATCHMENT_THRESHOLD 85
 #endif
 #ifdef ROBOT1
     #define CATCHMENT_THRESHOLD 150 // 280
@@ -122,6 +122,13 @@ DONT TOUCH WITHOUT ASKING ME
 #define OFFSET_MULTIPLIER 0.2F // variable a in desmos
 #define START_OFFSET      26  // variable d
 #define DEGREE_MULTIPLIER 20
+#define CURVE_AROUND_BALL_START_SPEED 700
+#define CURVE_AROUND_BALL_END_SPEED 300
+#define RADIUS_OF_ROBOT 20 
+#define START_CURVE_DISTANCE 50
+#define CURVE_AROUND_BALL_DECELERRATION_MULTIPLIER 1.1 // highee the value the slower the decelerration or acceleration
+#define SMALL_ANGLE_OFFSET_MULTIPLIER 2.5
+#define LARGE_ANGLE_OFFSET_MULTIPLIER 0.6
 
 #define KICK_BEARING_ERROR             6
 #define X_LOCALISATION_ERROR_THRESHOLD 10
@@ -162,14 +169,14 @@ SLOWDOWN AT BOUNDARIES (ONLY APPLICABLE FOR ATTACK CODE)
 #define X_NEGATIVE_AXIS_SLOWDOWN_START -70 //-45
 #define X_NEGATIVE_AXIS_SLOWDOWN_END   -95
 #define X_AXIS_SLOWDOWN_SPEED          1.0F
-#define X_AXIS_MAX_VELOCITY 250
+#define X_AXIS_MAX_VELOCITY 200
 
 // For goal
-#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.7F
+#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.8F
 #define Y_AXIS_SLOWDOWN_START_GOAL          60// 45
-#define Y_AXIS_SLOWDOWN_END_GOAL            95
+#define Y_AXIS_SLOWDOWN_END_GOAL            85
 #define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -60 //-5
-#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -95
+#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -85
 #define Y_AXIS_MAX_VELOCITY_GOAL 250
 
 #define Y_AXIS_SLOWDOWN_SPEED_EDGE 0.7F
