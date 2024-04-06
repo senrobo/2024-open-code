@@ -6,14 +6,17 @@
 SETTINGS
 ------------------------------------------------------------------------------------
 */
-#define ROBOT2
-#define TEST_DEFENCE_ROBOT
+#define ROBOT1
+//#define TEST_DEFENCE_ROBOT
+#define DEFENCE_CODE
+//#define ATTACK_CODE
 #define NORMAL_CODE
 //#define LOCALISE_CODE
 
+
 #define DEBUG_EVERYTHING
 // #define DEBUG_LIGHT_RING
-// #define DEBUG_THRESHOLD_VALUES
+//#define DEBUG_THRESHOLD_VALUES
 //  #define DEBUG_MOVEMENT
 //  #define DEBUG_DEFENCE_BOT
 //  #define DEBUG_LIDAR
@@ -22,7 +25,7 @@ SETTINGS
     #define CATCHMENT_THRESHOLD 120
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 200 // 280
+    #define CATCHMENT_THRESHOLD 150 // 280
 #endif
 
 /*
@@ -51,9 +54,9 @@ PINOUTS/SETTINGS
 #define BRUSHLESS_FAST_SPEED    155
 
 // all delays
-#define CATCH_BALL_DELAY_TIME    500 // in millis
-#define MIN_KICK_TIME            2000
-#define DRIBBLER_KICK_DELAY_TIME 500
+#define CATCH_BALL_DELAY_TIME    1000 // in millis
+#define MIN_KICK_TIME            1000
+#define DRIBBLER_KICK_DELAY_TIME 400
 
 /*
 ------------------------------------------------------------------------------------
@@ -68,25 +71,26 @@ Instructions:
     0 // invalidated for now due to unreliability
 
 // Bearing PID
-#define MIN_BEARING_CORRECTION   -500 // max motor speed in negative bearing
-#define MAX_BEARING_CORRECTION   500  // max motor speed in positive bearing
-#define DEFENCE_ROBOT_BEARING_KP 4
-#define DEFENCE_ROBOT_BEARING_KD 3000
+#define MIN_BEARING_CORRECTION   -400 // max motor speed in negative bearing
+#define MAX_BEARING_CORRECTION   400  // max motor speed in positive bearing
+#define DEFENCE_ROBOT_BEARING_KP 5
+#define DEFENCE_ROBOT_BEARING_KD 0
 #define DEFENCE_ROBOT_BEARING_KI                                               \
     0 // dont touch this unless u know what u are doing
 
 // Linetrack PID
 #define MIN_LINETRACK_CORRECTION                                               \
-    -0.2 // max offset direction in negative direction
+    -0.3 // max offset direction in negative direction
 #define MAX_LINETRACK_CORRECTION                                               \
-    0.2 // max offset direction in positive direction
-#define DEFENCE_ROBOT_LINETRACK_KP 0.5
+    0.3 // max offset direction in positive direction
+#define DEFENCE_ROBOT_LINETRACK_KP 0.3
 #define DEFENCE_ROBOT_LINETRACK_KD 0.04
 #define DEFENCE_ROBOT_LINETRACK_KI                                             \
     0 // dont touch this unless u know what u are doing
-#define DEFENCE_DEPTH_IN_LINE 0.8 // from 0 to 2
+#define DEFENCE_DEPTH_IN_LINE 1 // from 0 to 2
 
 // REJECTION USING CAMERA LOCALISATION
+
 
 // WHEN ON LINE ------------------------------------
 #define DEFENCE_Y_AXIS_REJECTION -85 // this condition must be fulfilled // -80
@@ -96,7 +100,7 @@ Instructions:
 #define DEFENCE_REJECTION_VELOCITY     250
 // When Tracking Ball--------------------------------------------------
 #define DEFENCE_TRACKBALL_MAX_VELOCITY                                         \
-    700 // this is a decelerration code from MAX to MIN
+    600 // this is a decelerration code from MAX to MIN
 #define DEFENCE_TRACKBALL_MIN_VELOCITY 0
 // https://www.desmos.com/calculator/btpwnfdqyq
 #define DEFENCE_ACCELERATION_MULTIPLIER                                        \
@@ -115,8 +119,8 @@ DONT TOUCH WITHOUT ASKING ME
 
 // curve around ball settings
 // https://www.desmos.com/calculator/atvzoxtoxn
-#define OFFSET_MULTIPLIER 0.04F // variable a in desmos
-#define START_OFFSET      28    // variable d
+#define OFFSET_MULTIPLIER 0.2F // variable a in desmos
+#define START_OFFSET      26  // variable d
 #define DEGREE_MULTIPLIER 20
 
 #define KICK_BEARING_ERROR             6
@@ -124,9 +128,18 @@ DONT TOUCH WITHOUT ASKING ME
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
 
 // strategy 2
-#define X_BALL_STRATEGY2_RANGE 30000000  // 30
-#define Y_BALL_STRATEGY2       -70000000 //-70
-#define MIN_TURN_AROUND_TIME   5000
+
+#ifdef ROBOT1
+#define X_BALL_STRATEGY2_RANGE 300000 // 30
+#define Y_BALL_STRATEGY2       -70000000//-70
+#endif
+
+#ifdef ROBOT2
+    #define X_BALL_STRATEGY2_RANGE 30000000000 // 30
+    #define Y_BALL_STRATEGY2       -70000000000 //-70
+#endif
+
+#define MIN_TURN_AROUND_TIME   2000
 
 /*
 ------------------------------------------------------------------------------------
@@ -134,7 +147,7 @@ IMPORTANT POSITIONS
 -------------------------------------------------------------------------------------
 */
 #define DEFAULT_POSITION                                                       \
-    (Point) { 30, 30 }
+    (Point) { 0, -30 }
 
 /*
 ------------------------------------------------------------------------------------
@@ -142,25 +155,56 @@ SLOWDOWN AT BOUNDARIES (ONLY APPLICABLE FOR ATTACK CODE)
 -------------------------------------------------------------------------------------
 */
 
+#ifdef ATTACK_CODE
 // slowdown with localisation code
-#define X_AXIS_SLOWDOWN_START          45// 45
-#define X_AXIS_SLOWDOWN_END            90
-#define X_NEGATIVE_AXIS_SLOWDOWN_START -45 //-45
-#define X_NEGATIVE_AXIS_SLOWDOWN_END   -90
+#define X_AXIS_SLOWDOWN_START          70// 45
+#define X_AXIS_SLOWDOWN_END            95
+#define X_NEGATIVE_AXIS_SLOWDOWN_START -70 //-45
+#define X_NEGATIVE_AXIS_SLOWDOWN_END   -95
 #define X_AXIS_SLOWDOWN_SPEED          1.0F
+#define X_AXIS_MAX_VELOCITY 250
 
 // For goal
-#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.5F
+#define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.7F
 #define Y_AXIS_SLOWDOWN_START_GOAL          60// 45
-#define Y_AXIS_SLOWDOWN_END_GOAL            90
+#define Y_AXIS_SLOWDOWN_END_GOAL            95
 #define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -60 //-5
-#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -90
+#define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -95
+#define Y_AXIS_MAX_VELOCITY_GOAL 250
 
 #define Y_AXIS_SLOWDOWN_SPEED_EDGE 0.7F
 #define Y_AXIS_SLOWDOWN_START_EDGE 70
 #define Y_AXIS_SLOWDOWN_END_EDGE   110
 #define Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE -70 
 #define Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE   -110
+#define Y_AXIS_MAX_VELOCITY_EDGE 250
+
+#endif
+
+#ifdef DEFENCE_CODE
+    // slowdown with localisation code
+    #define X_AXIS_SLOWDOWN_START          70 // 45
+    #define X_AXIS_SLOWDOWN_END            95
+    #define X_NEGATIVE_AXIS_SLOWDOWN_START -70 //-45
+    #define X_NEGATIVE_AXIS_SLOWDOWN_END   -95
+    #define X_AXIS_SLOWDOWN_SPEED          1.0F
+    #define X_AXIS_MAX_VELOCITY            250
+
+    // For goal
+    #define Y_AXIS_SLOWDOWN_SPEED_GOAL          0.7F
+    #define Y_AXIS_SLOWDOWN_START_GOAL          -40// 45
+    #define Y_AXIS_SLOWDOWN_END_GOAL            -10
+    #define Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -60 //-5
+    #define Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -95
+    #define Y_AXIS_MAX_VELOCITY_GOAL            250
+
+    #define Y_AXIS_SLOWDOWN_SPEED_EDGE          0.7F
+    #define Y_AXIS_SLOWDOWN_START_EDGE          70
+    #define Y_AXIS_SLOWDOWN_END_EDGE            110
+    #define Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE -70
+    #define Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE   -110
+    #define Y_AXIS_MAX_VELOCITY_EDGE            250
+#endif
 
 // DEFENCE BOT
 //  slowdown with localisation code
@@ -177,7 +221,7 @@ SLOWDOWN AT BOUNDARIES (ONLY APPLICABLE FOR ATTACK CODE)
 #define Y_DEFENCE_NEGATIVE_AXIS_SLOWDOWN_START_GOAL -78 //-5
 #define Y_DEFENCE_NEGATIVE_AXIS_SLOWDOWN_END_GOAL   -83
 
-#define X_GOAL_WIDTH 30
+#define X_GOAL_WIDTH 1000// 
 
 /*
 ------------------------------------------------------------------------------------

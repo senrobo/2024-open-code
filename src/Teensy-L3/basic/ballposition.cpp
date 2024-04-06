@@ -6,7 +6,7 @@ BallPosition::BallPosition() : kf(A, B, Q, R, I, H) {
 };
 
 void BallPosition::updateConstants(int dt) {
-    A << 1, 0, -dt, 0, -dt * dt, 0, 0, 1, 0, -dt, 0, -dt * dt, 0, 0, 1, 0, -dt,
+    A << 1, 0, dt, 0, dt * dt, 0, 0, 1, 0, dt, 0, dt * dt, 0, 0, 1, 0, dt,
         0, 0, 0, 0, 1, 0, -dt, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0;
 
     B << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;

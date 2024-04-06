@@ -127,7 +127,8 @@ class Movement {
     Vector _initialrobotcoordinate;
 
     // actual parameters
-    double _actualvelocity;
+    double _Xactualvelocity;
+    double _Yactualvelocity;
     double _actualbearing;
     double _actualdirection;
 
