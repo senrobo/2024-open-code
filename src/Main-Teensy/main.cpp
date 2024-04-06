@@ -294,27 +294,19 @@ void loop() {
         }
         // if robot is no online
         if (sensorValues.onLine == 1) {
-            if (processedValues.robot_position.y <= -84) {
-                movement.setmovetoPointDirection(Direction::movetoPoint{
-                    Vector::fromPoint(processedValues.robot_position),
-                    {0, 80},
-                    processedValues.relativeBearing});
-                movement.setconstantVelocity(Velocity::constant{400});
-                movement.setconstantBearing(Bearing::constant{
-                    last_bearing, processedValues.relativeBearing});
-            } else {
-                movement.setconstantBearing(Bearing::constant{
-                    last_bearing, processedValues.relativeBearing});
-                movement.setconstantVelocity(Velocity::constant{400});
-                movement.setconstantDirection(Direction::constant{
-                    processedValues.bluegoal_relativeposition.angle});
-            }
+
+            movement.setconstantBearing(Bearing::constant{
+                0, processedValues.relativeBearing});
+            movement.setconstantVelocity(Velocity::constant{400});
+            movement.setconstantDirection(Direction::constant{
+                processedValues.bluegoal_relativeposition.angle});
+            
 
         }
 
         // if robot is online
         else if (sensorValues.onLine == 2) {
-            if (processedValues.robot_position.y < DEFENCE_Y_AXIS_REJECTION &&
+            if (processedValues.robot_position.y < DEFENCE_Y_AXIS_REJECTION ||
                 (processedValues.robot_position.x <
                      DEFENCE_MIN_X_AXIS_REJECECTION ||
                  processedValues.robot_position.x >
@@ -498,177 +490,183 @@ void loop() {
             execution.targetBearing = 0;
         }
 
-        if (sensorValues.onLine == 2) {
+
+        if (sensorValues.onLine == 2 ||
+            millis() - execution.lastLineRejectTime > 100) {
             movement.setconstantDirection(Direction::constant{
                 clipAngleto180degrees(180 + sensorValues.angleBisector)});
-            movement.setconstantVelocity(Velocity::constant{350});
+            movement.setconstantVelocity(Velocity::constant{600});
         }
 
-        else if (processedValues.averageCatchmentValues >=
-                 CATCHMENT_THRESHOLD) { // 720
-
-            solenoid.kick = 0;
-            if ((((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
-                   ballposition.x > X_BALL_STRATEGY2_RANGE) &&
-                  (ballposition.y < Y_BALL_STRATEGY2) &&
-                  processedValues.robot_position.y < -40 &&
-                  processedValues.averageballExists >= 0.98 &&
-                  processedValues.robot_position.y > ballposition.y) ||
-                 millis() - execution.lastTurnBackwardsTime <
-                     MIN_TURN_AROUND_TIME)) {
-
-                if ((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
-                     ballposition.x > X_BALL_STRATEGY2_RANGE) &&
-                    (ballposition.y < Y_BALL_STRATEGY2) &&
-                    averageBallDetected > 0.95) {
-                    execution.lastTurnBackwardsTime = millis();
-                }
-
-                execution.strategy = 2;
-
-            } else {
-                execution.strategy = 1;
-            }
-  
-
-            if (processedValues.ballExists == 0) {
-                movetoPoint(DEFAULT_POSITION);
-            }
-
-            // else if (ballposition.x < X_AXIS_BALL_RANGE &&
-            //          ballposition.x > -X_AXIS_BALL_RANGE &&
-            //          ballposition.y > Y_AXIS_BALL_RANGE) {
-
-            //     movetoPoint(DEFAULT_POSITION);
-            // }
-
-            else {
-
-                movement.setconstantVelocity(
-                    Velocity::constant{movement.applySigmoid(
-                        600, 250,
-                        curveAroundBallMultiplier(
-                            processedValues.ball_relativeposition.angle,
-                            processedValues.ball_relativeposition.distance - 20,
-                            70 - 20),
-                        2.0)});
+            else if (processedValues.averageCatchmentValues >=
+                     CATCHMENT_THRESHOLD) { // 720
+                     
                 solenoid.kick = 0;
-                movement.setconstantDirection(Direction::constant{
-                    ballAngleOffset(
-                        processedValues.ball_relativeposition.distance,
-                        processedValues.ball_relativeposition.angle) +
-                    processedValues.ball_relativeposition.angle});
-            }
-        } else if (processedValues.averageCatchmentValues <=
-                   CATCHMENT_THRESHOLD) { // 720
+                if ((((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
+                       ballposition.x > X_BALL_STRATEGY2_RANGE) &&
+                      (ballposition.y < Y_BALL_STRATEGY2) &&
+                      processedValues.robot_position.y < -40 &&
+                      processedValues.averageballExists >= 0.98 &&
+                      processedValues.robot_position.y > ballposition.y) ||
+                     millis() - execution.lastTurnBackwardsTime <
+                         MIN_TURN_AROUND_TIME)) {
 
-            if (execution.strategy == 1) {
-                movement.setBearingSettings(-80, 80, 3, 0, 0);
-
-                execution.targetBearing =
-                    processedValues.relativeBearing +
-                    processedValues.yellowgoal_relativeposition.angle;
-
-                if (processedValues.lidarDistance[0] < 40 &&
-                        processedValues.lidarConfidence[0] == 0 ||
-                    millis() - execution.lastavoidTime < 2000) {
-                    if (processedValues.lidarDistance[0] < 40 &&
-                        processedValues.lidarConfidence[0] == 0) {
-
-                        execution.lastavoidTime = millis();
-                        execution.setAvoidBotDirection == true;
-                        if (processedValues.robot_position.x <= 0) {
-                            execution.direction = 90;
-                        } else {
-                            execution.direction = -90;
-                        }
+                    if ((ballposition.x < -X_BALL_STRATEGY2_RANGE ||
+                         ballposition.x > X_BALL_STRATEGY2_RANGE) &&
+                        (ballposition.y < Y_BALL_STRATEGY2) &&
+                        averageBallDetected > 0.95) {
+                        execution.lastTurnBackwardsTime = millis();
                     }
 
-                    movement.setconstantDirection(
-                        Direction::constant{execution.direction});
-                    movement.setconstantVelocity(Velocity::constant{500});
-                    movement.setAcceleration(true, 0.003);
+                    execution.strategy = 2;
 
-                } else if (processedValues.yellowgoal_relativeposition
-                               .distance < 90) {
+                } else {
+                    execution.strategy = 1;
+                }
 
-                    if (processedValues.robot_position.x < 40 ||
-                        processedValues.robot_position.x > -40) {
+                if (processedValues.ballExists == 0) {
+                    movetoPoint(DEFAULT_POSITION);
+                }
+
+                // else if (ballposition.x < X_AXIS_BALL_RANGE &&
+                //          ballposition.x > -X_AXIS_BALL_RANGE &&
+                //          ballposition.y > Y_AXIS_BALL_RANGE) {
+
+                //     movetoPoint(DEFAULT_POSITION);
+                // }
+
+                else {
+
+                    movement.setconstantVelocity(
+                        Velocity::constant{movement.applySigmoid(
+                            600, 250,
+                            curveAroundBallMultiplier(
+                                processedValues.ball_relativeposition.angle,
+                                processedValues.ball_relativeposition.distance -
+                                    20,
+                                70 - 20),
+                            2.0)});
+                    solenoid.kick = 0;
+                    movement.setconstantDirection(Direction::constant{
+                        ballAngleOffset(
+                            processedValues.ball_relativeposition.distance,
+                            processedValues.ball_relativeposition.angle) +
+                        processedValues.ball_relativeposition.angle});
+                }
+            } else if (processedValues.averageCatchmentValues <=
+                       CATCHMENT_THRESHOLD) { // 720
+
+                if (execution.strategy == 1) {
+                    movement.setBearingSettings(-80, 80, 3, 0, 0);
+
+                    execution.targetBearing =
+                        processedValues.relativeBearing +
+                        processedValues.yellowgoal_relativeposition.angle;
+
+                    if (processedValues.lidarDistance[0] < 40 &&
+                            processedValues.lidarConfidence[0] == 0 ||
+                        millis() - execution.lastavoidTime < 2000) {
+                        if (processedValues.lidarDistance[0] < 40 &&
+                            processedValues.lidarConfidence[0] == 0) {
+
+                            execution.lastavoidTime = millis();
+                            execution.setAvoidBotDirection == true;
+                            if (processedValues.robot_position.x <= 0) {
+                                execution.direction = 90;
+                            } else {
+                                execution.direction = -90;
+                            }
+                        }
+
+                        movement.setconstantDirection(
+                            Direction::constant{execution.direction});
                         movement.setconstantVelocity(Velocity::constant{500});
-                        movement.setconstantDirection(Direction::constant{
-                            processedValues.yellowgoal_relativeposition.angle});
+                        movement.setAcceleration(true, 0.003);
 
-                        solenoid.kick = 1024;
-                    } else if ((processedValues.relativeBearing <
-                                    execution.targetBearing +
-                                        KICK_BEARING_ERROR && // NEED TO
-                                                              // RECRAFT!!!
-                                processedValues.relativeBearing >
-                                    execution.targetBearing -
-                                        KICK_BEARING_ERROR) &&
-                               (millis() - execution.catchmentTime) >
-                                   CATCH_BALL_DELAY_TIME) {
-                        solenoid.kick = 1024;
+                    } else if (processedValues.yellowgoal_relativeposition
+                                   .distance < 90) {
 
+                        if (processedValues.robot_position.x < 40 ||
+                            processedValues.robot_position.x > -40) {
+                            movement.setconstantVelocity(
+                                Velocity::constant{500});
+                            movement.setconstantDirection(Direction::constant{
+                                processedValues.yellowgoal_relativeposition
+                                    .angle});
+
+                            solenoid.kick = 1024;
+                        } else if ((processedValues.relativeBearing <
+                                        execution.targetBearing +
+                                            KICK_BEARING_ERROR && // NEED TO
+                                                                  // RECRAFT!!!
+                                    processedValues.relativeBearing >
+                                        execution.targetBearing -
+                                            KICK_BEARING_ERROR) &&
+                                   (millis() - execution.catchmentTime) >
+                                       CATCH_BALL_DELAY_TIME) {
+                            solenoid.kick = 1024;
+
+                        } else {
+
+                            movement.setconstantVelocity(
+                                Velocity::constant{500});
+                            movement.setconstantDirection(Direction::constant{
+                                processedValues.yellowgoal_relativeposition
+                                    .angle});
+                            execution.dribblerSpeed = 160;
+
+                            // solenoid.kick = 1024;
+                        }
                     } else {
 
                         movement.setconstantVelocity(Velocity::constant{500});
                         movement.setconstantDirection(Direction::constant{
                             processedValues.yellowgoal_relativeposition.angle});
-                        execution.dribblerSpeed = 160;
-
-                        // solenoid.kick = 1024;
                     }
-                } else {
-
-                    movement.setconstantVelocity(Velocity::constant{500});
-                    movement.setconstantDirection(Direction::constant{
-                        processedValues.yellowgoal_relativeposition.angle});
-                }
-            }
-
-            else if (execution.strategy == 2) {
-                execution.dribblerSpeed = 165;
-                if (processedValues.relativeBearing <
-                        processedValues.yellowgoal_relativeposition.angle +
-                            processedValues.relativeBearing + 10 &&
-                    processedValues.relativeBearing >
-                        processedValues.yellowgoal_relativeposition.angle +
-                            processedValues.relativeBearing - 10 &&
-                    processedValues.relativeBearing > -120 &&
-                    processedValues.relativeBearing < 120) {
-                    solenoid.kick = 1024;
-                    movement.setBearingSettings(0, 1, 0.00001, 0, 0);
-                    execution.targetBearing =
-                        processedValues.yellowgoal_relativeposition.angle +
-                        processedValues.relativeBearing;
-                    movement.setconstantVelocity(Velocity::constant{0});
-                    execution.dribblerSpeed = 130;
                 }
 
-                else if ((processedValues.robot_position.x - KICK_POINT.x <
-                              X_LOCALISATION_ERROR_THRESHOLD &&
-                          processedValues.robot_position.x - KICK_POINT.x >
-                              -X_LOCALISATION_ERROR_THRESHOLD &&
-                          processedValues.robot_position.y - KICK_POINT.y <
-                              Y_LOCALISATION_ERROR_THRESHOLD &&
-                          processedValues.robot_position.y - KICK_POINT.y >
-                              -Y_LOCALISATION_ERROR_THRESHOLD &&
-                          (millis() - execution.catchmentTime) >
-                              CATCH_BALL_DELAY_TIME) ||
-                         millis() - execution.lastTurnandKickTime < 3000) {
-                    if (processedValues.robot_position.x - KICK_POINT.x <
-                            X_LOCALISATION_ERROR_THRESHOLD &&
-                        processedValues.robot_position.x - KICK_POINT.x >
-                            -X_LOCALISATION_ERROR_THRESHOLD &&
-                        processedValues.robot_position.y - KICK_POINT.y <
-                            Y_LOCALISATION_ERROR_THRESHOLD &&
-                        processedValues.robot_position.y - KICK_POINT.y >
-                            -Y_LOCALISATION_ERROR_THRESHOLD &&
-                        (millis() - execution.catchmentTime) >
-                            CATCH_BALL_DELAY_TIME) {
-                        execution.lastTurnandKickTime = millis();
+                else if (execution.strategy == 2) {
+                    execution.dribblerSpeed = 165;
+                    if (processedValues.relativeBearing <
+                            processedValues.yellowgoal_relativeposition.angle +
+                                processedValues.relativeBearing + 10 &&
+                        processedValues.relativeBearing >
+                            processedValues.yellowgoal_relativeposition.angle +
+                                processedValues.relativeBearing - 10 &&
+                        processedValues.relativeBearing > -120 &&
+                        processedValues.relativeBearing < 120) {
+                        solenoid.kick = 1024;
+                        movement.setBearingSettings(0, 1, 0.00001, 0, 0);
+                        execution.targetBearing =
+                            processedValues.yellowgoal_relativeposition.angle +
+                            processedValues.relativeBearing;
+                        movement.setconstantVelocity(Velocity::constant{0});
+                        execution.dribblerSpeed = 130;
                     }
+
+                    else if ((processedValues.robot_position.x - KICK_POINT.x <
+                                  X_LOCALISATION_ERROR_THRESHOLD &&
+                              processedValues.robot_position.x - KICK_POINT.x >
+                                  -X_LOCALISATION_ERROR_THRESHOLD &&
+                              processedValues.robot_position.y - KICK_POINT.y <
+                                  Y_LOCALISATION_ERROR_THRESHOLD &&
+                              processedValues.robot_position.y - KICK_POINT.y >
+                                  -Y_LOCALISATION_ERROR_THRESHOLD &&
+                              (millis() - execution.catchmentTime) >
+                                  CATCH_BALL_DELAY_TIME) ||
+                             millis() - execution.lastTurnandKickTime < 3000) {
+                        if (processedValues.robot_position.x - KICK_POINT.x <
+                                X_LOCALISATION_ERROR_THRESHOLD &&
+                            processedValues.robot_position.x - KICK_POINT.x >
+                                -X_LOCALISATION_ERROR_THRESHOLD &&
+                            processedValues.robot_position.y - KICK_POINT.y <
+                                Y_LOCALISATION_ERROR_THRESHOLD &&
+                            processedValues.robot_position.y - KICK_POINT.y >
+                                -Y_LOCALISATION_ERROR_THRESHOLD &&
+                            (millis() - execution.catchmentTime) >
+                                CATCH_BALL_DELAY_TIME) {
+                            execution.lastTurnandKickTime = millis();
+                        }
 
 #ifdef TURN_AND_KICK_STRATEGY
                     execution.targetBearing =

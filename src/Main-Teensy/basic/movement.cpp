@@ -195,7 +195,7 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
         _movingbearing =
             bearingController.advance(clipAngleto180degrees(_actualbearing));
     } else if (_targetbearing > 135) {
-        _movingbearing = 
+        _movingbearing =
             bearingController.advance(clipAngleto360degrees(_actualbearing));
     } else {
         _movingbearing =
@@ -212,74 +212,108 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     double rotatedX = rotationMatrix[0][0] * x + rotationMatrix[0][1] * y;
     double rotatedY = rotationMatrix[1][0] * x + rotationMatrix[1][1] * y;
 
+    // https://www.desmos.com/calculator/3hicyamp5q
+    double slowdownSpeedMultipier =
+        constrain(91 * powf(_targetvelocity, -1.0) * 0.27, 0, 1);
     if (execution.attackMode == 1) {
 
         if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
 
             double deccel =
-                constrain(X_AXIS_SLOWDOWN_SPEED -
+                constrain(X_AXIS_SLOWDOWN_SPEED * slowdownSpeedMultipier -
                               ((robotPosition.x - X_AXIS_SLOWDOWN_START) /
                                (X_AXIS_SLOWDOWN_END - X_AXIS_SLOWDOWN_START) *
-                               X_AXIS_SLOWDOWN_SPEED),
+                               X_AXIS_SLOWDOWN_SPEED * slowdownSpeedMultipier),
                           0, 1000);
-
             rotatedX = constrain(rotatedX, -700.0, deccel);
         } else if (robotPosition.x < X_NEGATIVE_AXIS_SLOWDOWN_START) {
 
             double deccel = constrain(
-                X_AXIS_SLOWDOWN_SPEED -
+                X_AXIS_SLOWDOWN_SPEED * slowdownSpeedMultipier -
                     ((-robotPosition.x + X_NEGATIVE_AXIS_SLOWDOWN_START) /
                      (X_NEGATIVE_AXIS_SLOWDOWN_END -
                       X_NEGATIVE_AXIS_SLOWDOWN_START) *
-                     X_AXIS_SLOWDOWN_SPEED),
+                     X_AXIS_SLOWDOWN_SPEED * slowdownSpeedMultipier),
                 -1000, 0);
+
             rotatedX = constrain(rotatedX, deccel, 600);
         }
         if (robotPosition.x < X_GOAL_WIDTH && robotPosition.x > -X_GOAL_WIDTH) {
             if (robotPosition.y > Y_AXIS_SLOWDOWN_START_GOAL) {
                 double deccel = constrain(
-                    Y_AXIS_SLOWDOWN_SPEED_GOAL -
+                    Y_AXIS_SLOWDOWN_SPEED_GOAL * slowdownSpeedMultipier -
                         ((robotPosition.y - Y_AXIS_SLOWDOWN_START_GOAL) /
                          (Y_AXIS_SLOWDOWN_END_GOAL -
                           Y_AXIS_SLOWDOWN_START_GOAL) *
-                         Y_AXIS_SLOWDOWN_SPEED_GOAL),
+                         Y_AXIS_SLOWDOWN_SPEED_GOAL * slowdownSpeedMultipier),
                     0, 1000);
                 rotatedY = constrain(rotatedY, -600.0, deccel);
                 Serial.println("sad");
             } else if (robotPosition.y < Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) {
-                double deccel =
-                    constrain(Y_AXIS_SLOWDOWN_SPEED_GOAL -
-                                  ((-robotPosition.y +
-                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) /
-                                   (Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL -
-                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) *
-                                   Y_AXIS_SLOWDOWN_SPEED_GOAL),
-                              -1000, 0);
+                double deccel = constrain(
+                    Y_AXIS_SLOWDOWN_SPEED_GOAL * slowdownSpeedMultipier -
+                        ((-robotPosition.y +
+                          Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) /
+                         (Y_NEGATIVE_AXIS_SLOWDOWN_END_GOAL -
+                          Y_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) *
+                         Y_AXIS_SLOWDOWN_SPEED_GOAL * slowdownSpeedMultipier),
+                    -1000, 0);
                 rotatedY = constrain(rotatedY, deccel, 600);
             }
         } else {
             if (robotPosition.y > Y_AXIS_SLOWDOWN_START_EDGE) {
                 double deccel = constrain(
-                    Y_AXIS_SLOWDOWN_SPEED_EDGE -
+                    Y_AXIS_SLOWDOWN_SPEED_EDGE * slowdownSpeedMultipier -
                         ((robotPosition.y - Y_AXIS_SLOWDOWN_START_EDGE) /
                          (Y_AXIS_SLOWDOWN_END_EDGE -
                           Y_AXIS_SLOWDOWN_START_EDGE) *
-                         Y_AXIS_SLOWDOWN_SPEED_EDGE),
+                         Y_AXIS_SLOWDOWN_SPEED_EDGE * slowdownSpeedMultipier),
                     0, 1000);
                 rotatedY = constrain(rotatedY, -600.0, deccel);
             } else if (robotPosition.y < Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) {
-                double deccel =
-                    constrain(Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE -
-                                  ((-robotPosition.y +
-                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) /
-                                   (Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE -
-                                    Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) *
-                                   Y_AXIS_SLOWDOWN_SPEED_EDGE),
-                              -1000, 0);
+                double deccel = constrain(
+                    Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE * slowdownSpeedMultipier -
+                        ((-robotPosition.y +
+                          Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) /
+                         (Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE -
+                          Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) *
+                         Y_AXIS_SLOWDOWN_SPEED_EDGE * slowdownSpeedMultipier),
+                    -1000, 0);
                 rotatedY = constrain(rotatedY, deccel, 600);
             }
         }
 
+        double adjustedX =
+            rotationMatrix[0][0] * rotatedX + rotationMatrix[1][0] * rotatedY;
+        double adjustedY =
+            rotationMatrix[0][1] * rotatedX + rotationMatrix[1][1] * rotatedY;
+
+        x = adjustedX;
+        y = adjustedY;
+    } else if (execution.attackMode == 0) {
+        if (robotPosition.y > Y_DEFENCE_AXIS_SLOWDOWN_START_GOAL) {
+            double deccel = constrain(
+                Y_DEFENCE_AXIS_SLOWDOWN_SPEED_GOAL * slowdownSpeedMultipier -
+                    ((robotPosition.y - Y_DEFENCE_AXIS_SLOWDOWN_START_GOAL) /
+                     (Y_DEFENCE_AXIS_SLOWDOWN_END_GOAL -
+                      Y_DEFENCE_AXIS_SLOWDOWN_START_GOAL) *
+                     Y_DEFENCE_AXIS_SLOWDOWN_SPEED_GOAL *
+                     slowdownSpeedMultipier),
+                0, 1000);
+            rotatedY = constrain(rotatedY, -600.0, deccel);
+        } else if (robotPosition.y <
+                   Y_DEFENCE_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) {
+            double deccel = constrain(
+                Y_DEFENCE_AXIS_SLOWDOWN_SPEED_GOAL * slowdownSpeedMultipier -
+                    ((-robotPosition.y +
+                      Y_DEFENCE_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) /
+                     (Y_DEFENCE_NEGATIVE_AXIS_SLOWDOWN_END_GOAL -
+                      Y_DEFENCE_NEGATIVE_AXIS_SLOWDOWN_START_GOAL) *
+                     Y_DEFENCE_AXIS_SLOWDOWN_SPEED_GOAL *
+                     slowdownSpeedMultipier),
+                -1000, 0);
+            rotatedY = constrain(rotatedY, deccel, 600);
+        }
         double adjustedX =
             rotationMatrix[0][0] * rotatedX + rotationMatrix[1][0] * rotatedY;
         double adjustedY =
@@ -295,7 +329,7 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
                                        double angularComponent) {
         return (int)(_actualvelocity * velocityDirection + angularComponent);
     };
-    
+
     double angularComponent = _movingbearing * 1.3;
 
     double FLSp =

@@ -97,21 +97,25 @@ void setup() {
 }
 
 void loop() {
-    L3BluetoothSerial.update();
+    L3BluetoothSerial.update(
+    
+    );
     if (deviceConnected) {
 
         u_int8_t *rxValue = RxAttackMode->getData();
 
-        if (*rxValue == 1) {
-            if (teensyData.switchMode == 1 && teensyData.currentMode == 0) {
-                bluetoothData.attackMode = 1;
-            } else {
-                bluetoothData.attackMode = 0;
-            }
-        } else {
+        // if (*rxValue == 3 || *rxValue == 1) {
+        //     // if (teensyData.switchMode == 1 && teensyData.currentMode == 0) {
+        //     //     bluetoothData.attackMode = 1;
+        //     // } else {
+        //     //     bluetoothData.attackMode = 0;
+        //     // }
+        //     bluetoothData.attackMode = 0;
+        // } else {
 
-            bluetoothData.attackMode = 1;
-        }
+        //     bluetoothData.attackMode = 1;
+        // }
+        bluetoothData.attackMode = 0;
         Serial.print("Characteristic 2 (getValue): ");
         Serial.println(*rxValue);
 
@@ -119,9 +123,14 @@ void loop() {
     }
 
     if (deviceConnected == false) {bluetoothData.attackMode = 1; }
-
+    delay(5);
     // Disconnecting
+
+    byte buf[sizeof(bluetoothTxPayload)];
+    memcpy(buf, &bluetoothData, sizeof(bluetoothData));
+    L3BluetoothSerial.send(buf, sizeof(buf));
     if (!deviceConnected && oldDeviceConnected) {
+
         delay(500); // give the bluetooth stack the chance to get things
         pServer->startAdvertising(); 
         Serial.println("start advertising");
@@ -132,14 +141,11 @@ void loop() {
        
         oldDeviceConnected = deviceConnected;
     }
+    
 
-
-    Serial.print(bluetoothData.attackMode);
-    Serial.print(", ");
-    Serial.print(teensyData.currentMode);
-    Serial.print(", ");
-    Serial.println(teensyData.switchMode);
-    byte buf[sizeof(bluetoothTxPayload)];
-    memcpy(buf, &bluetoothData, sizeof(bluetoothData));
-    L3BluetoothSerial.send(buf, sizeof(buf));
+    // Serial.print(bluetoothData.attackMode);
+    // Serial.print(", ");
+    // Serial.print(teensyData.currentMode);
+    // Serial.print(", ");
+    // Serial.println(teensyData.switchMode);
 }

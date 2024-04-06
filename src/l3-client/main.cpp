@@ -61,7 +61,6 @@ void setup() {
 }
 
 void loop() {
-    delay(1);
     L3BluetoothSerial.update();
 
     (connected) ? doConnect == false : doConnect == true;
@@ -82,16 +81,17 @@ void loop() {
         u_int16_t rxValue = RxAttackMode->readUInt16();
         Serial.print("Characteristic 2 (readValue): ");
         Serial.println(rxValue);
-        if (rxValue == 1) {
-            if (teensyData.switchMode == 1 && teensyData.currentMode == 0) {
-                bluetoothData.attackMode = 1;
-            } else {
-                bluetoothData.attackMode = 0;
-            }
-        } else {
+        // if (rxValue == 1) {
+        //     if (teensyData.switchMode == 1 && teensyData.currentMode == 0) {
+        //         bluetoothData.attackMode = 1;
+        //     } else {
+        //         bluetoothData.attackMode = 0;
+        //     }
+        // } else {
 
-            bluetoothData.attackMode = 1;
-        }
+        //     bluetoothData.attackMode = 1;
+        // }
+        bluetoothData.attackMode = 1;
 
         u_int8_t txValue = bluetoothData.attackMode;
 
@@ -99,20 +99,24 @@ void loop() {
     } else {
         bluetoothData.attackMode = 1;
     }
-    if (doScan && connected == false) {
-
-        BLEDevice::getScan()->start(
-            0); // this is just example to start scan after disconnect, most
-                // likely there is better way to do it in arduino
-    }
-
-    Serial.print(bluetoothData.attackMode);
-    Serial.print(", ");
-    Serial.print(teensyData.currentMode);
-    Serial.print(", ");
-    Serial.println(teensyData.switchMode);
+    delay(5);
 
     byte buf[sizeof(bluetoothTxPayload)];
     memcpy(buf, &bluetoothData, sizeof(bluetoothData));
     L3BluetoothSerial.send(buf, sizeof(buf));
+
+    if (doScan && connected == false) {
+        byte buf[sizeof(bluetoothTxPayload)];
+        memcpy(buf, &bluetoothData, sizeof(bluetoothData));
+        L3BluetoothSerial.send(buf, sizeof(buf));
+        BLEDevice::getScan()->start(
+            0); // this is just example to start scan after disconnect, most
+                // likely there is better way to do it in arduino
+    }
+    // Serial.print(bluetoothData.attackMode);
+    // Serial.print(", ");
+    // Serial.print(teensyData.currentMode);
+    // Serial.print(", ");
+    // Serial.println(teensyData.switchMode);
+
 }

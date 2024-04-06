@@ -209,6 +209,7 @@ struct Execution {
     int kickComplete = 0;
     int lastavoidTime = 0;
     int lastdribblerKickDelayTime = 0;
+    int lastLineRejectTime = 0;
     int strategy2Quadrant = 0;
     bool setAvoidBotDirection = true;
     int catchmentTime = 0;
