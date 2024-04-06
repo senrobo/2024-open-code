@@ -6,9 +6,8 @@
 SETTINGS
 ------------------------------------------------------------------------------------
 */
-
-#define ROBOT1
-//#define TEST_DEFENCE_ROBOT
+#define ROBOT2
+#define TEST_DEFENCE_ROBOT
 #define NORMAL_CODE
 //#define LOCALISE_CODE
 
@@ -23,7 +22,7 @@ SETTINGS
     #define CATCHMENT_THRESHOLD 120
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 240 // 280
+    #define CATCHMENT_THRESHOLD 200 // 280
 #endif
 
 /*
@@ -71,17 +70,17 @@ Instructions:
 // Bearing PID
 #define MIN_BEARING_CORRECTION   -500 // max motor speed in negative bearing
 #define MAX_BEARING_CORRECTION   500  // max motor speed in positive bearing
-#define DEFENCE_ROBOT_BEARING_KP 5
-#define DEFENCE_ROBOT_BEARING_KD 0.05
+#define DEFENCE_ROBOT_BEARING_KP 4
+#define DEFENCE_ROBOT_BEARING_KD 3000
 #define DEFENCE_ROBOT_BEARING_KI                                               \
     0 // dont touch this unless u know what u are doing
 
 // Linetrack PID
 #define MIN_LINETRACK_CORRECTION                                               \
-    -0.3 // max offset direction in negative direction
+    -0.2 // max offset direction in negative direction
 #define MAX_LINETRACK_CORRECTION                                               \
-    0.3 // max offset direction in positive direction
-#define DEFENCE_ROBOT_LINETRACK_KP 0.4
+    0.2 // max offset direction in positive direction
+#define DEFENCE_ROBOT_LINETRACK_KP 0.5
 #define DEFENCE_ROBOT_LINETRACK_KD 0.04
 #define DEFENCE_ROBOT_LINETRACK_KI                                             \
     0 // dont touch this unless u know what u are doing
@@ -97,7 +96,7 @@ Instructions:
 #define DEFENCE_REJECTION_VELOCITY     250
 // When Tracking Ball--------------------------------------------------
 #define DEFENCE_TRACKBALL_MAX_VELOCITY                                         \
-    800 // this is a decelerration code from MAX to MIN
+    700 // this is a decelerration code from MAX to MIN
 #define DEFENCE_TRACKBALL_MIN_VELOCITY 0
 // https://www.desmos.com/calculator/btpwnfdqyq
 #define DEFENCE_ACCELERATION_MULTIPLIER                                        \
@@ -125,8 +124,8 @@ DONT TOUCH WITHOUT ASKING ME
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
 
 // strategy 2
-#define X_BALL_STRATEGY2_RANGE 30  // 30
-#define Y_BALL_STRATEGY2       -70 //-70
+#define X_BALL_STRATEGY2_RANGE 30000000  // 30
+#define Y_BALL_STRATEGY2       -70000000 //-70
 #define MIN_TURN_AROUND_TIME   5000
 
 /*

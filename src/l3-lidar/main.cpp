@@ -70,8 +70,7 @@ void loop() {
             tflI2C[i].printStatus();
         }
     }
-
-
+    delay(20);
     byte buf[sizeof(lidarTxPayload)];
     memcpy(buf, &esp32lidardata, sizeof(esp32lidardata));
     L3LIDARSerial.send(buf, sizeof(buf));
