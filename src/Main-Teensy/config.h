@@ -8,7 +8,7 @@ SETTINGS
 */
 
 #define ROBOT1
-//#define TEST_DEFENCE_ROBOT
+#define TEST_DEFENCE_ROBOT
 #define NORMAL_CODE
 //#define LOCALISE_CODE
 
@@ -20,10 +20,10 @@ SETTINGS
 //  #define DEBUG_LIDAR
 
 #ifdef ROBOT2
-    #define CATCHMENT_THRESHOLD 100
+    #define CATCHMENT_THRESHOLD 85
 #endif
 #ifdef ROBOT1
-    #define CATCHMENT_THRESHOLD 200 // 280
+    #define CATCHMENT_THRESHOLD 280 // 280
 #endif
 
 /*
@@ -92,9 +92,9 @@ Instructions:
 // WHEN ON LINE ------------------------------------
 #define DEFENCE_Y_AXIS_REJECTION -85 // this condition must be fulfilled // -80
 #define DEFENCE_MIN_X_AXIS_REJECECTION                                         \
-    -130                                // either min or max must be fulfiiled // -13
-#define DEFENCE_MAX_X_AXIS_REJECECTION 130 // either min or max must be fulfiiled // 13
-#define DEFENCE_REJECTION_VELOCITY     300
+    -130                               // either min or max must be fulfiiled // -13
+#define DEFENCE_MAX_X_AXIS_REJECECTION 13 // either min or max must be fulfiiled // 13
+#define DEFENCE_REJECTION_VELOCITY     250
 // When Tracking Ball--------------------------------------------------
 #define DEFENCE_TRACKBALL_MAX_VELOCITY                                         \
     800 // this is a decelerration code from MAX to MIN
@@ -125,8 +125,8 @@ DONT TOUCH WITHOUT ASKING ME
 #define Y_LOCALISATION_ERROR_THRESHOLD 10
 
 // strategy 2
-#define X_BALL_STRATEGY2_RANGE 30  // 30
-#define Y_BALL_STRATEGY2       -70 //-70
+#define X_BALL_STRATEGY2_RANGE 30000000  // 30
+#define Y_BALL_STRATEGY2       -70000000 //-70
 #define MIN_TURN_AROUND_TIME   5000
 
 /*
