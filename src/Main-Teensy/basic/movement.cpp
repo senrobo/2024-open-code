@@ -218,7 +218,7 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     _Xactualvelocity = _targetvelocity;
     _Yactualvelocity = _targetvelocity;
 
-    if (execution.attackMode == 1) {
+
 
         if (robotPosition.x > X_AXIS_SLOWDOWN_START) {
 
@@ -283,38 +283,7 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
                                                  Y_AXIS_MAX_VELOCITY_GOAL);
                 }
             }
-        } else {
-            if (robotPosition.y > Y_AXIS_SLOWDOWN_START_EDGE) {
-                double deccel = constrain(
-                    Y_AXIS_SLOWDOWN_SPEED_EDGE * slowdownSpeedMultipier -
-                        ((robotPosition.y - Y_AXIS_SLOWDOWN_START_EDGE) /
-                         (Y_AXIS_SLOWDOWN_END_EDGE -
-                          Y_AXIS_SLOWDOWN_START_EDGE) *
-                         Y_AXIS_SLOWDOWN_SPEED_EDGE * slowdownSpeedMultipier),
-                    0, 1000);
-                rotatedY = constrain(rotatedY, -600.0, deccel);
-
-                if (rotatedY > 0) {
-                    _Yactualvelocity = constrain(_Yactualvelocity, 0,
-                                                 Y_AXIS_MAX_VELOCITY_EDGE);
-                }
-            } else if (robotPosition.y < Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) {
-                double deccel = constrain(
-                    Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE * slowdownSpeedMultipier -
-                        ((-robotPosition.y +
-                          Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) /
-                         (Y_NEGATIVE_AXIS_SLOWDOWN_END_EDGE -
-                          Y_NEGATIVE_AXIS_SLOWDOWN_START_EDGE) *
-                         Y_AXIS_SLOWDOWN_SPEED_EDGE * slowdownSpeedMultipier),
-                    -1000, 0);
-                rotatedY = constrain(rotatedY, deccel, 600);
-
-                if (rotatedY < 0) {
-                    _Yactualvelocity = constrain(_Yactualvelocity, 0,
-                                                 Y_AXIS_MAX_VELOCITY_EDGE);
-                }
-            }
-        }
+        
 
         double adjustedX =
             rotationMatrix[0][0] * rotatedX + rotationMatrix[1][0] * rotatedY;
@@ -410,8 +379,8 @@ void Movement::drive(Point robotPosition, double bearing, int dt_micros) {
     digitalWriteFast(FR_IN1_PIN, FRSpeed > 0 ? LOW : HIGH);
     digitalWriteFast(FR_IN2_PIN, FRSpeed > 0 ? HIGH : LOW);
 
-    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? HIGH : LOW);
-    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(BR_IN1_PIN, BRSpeed > 0 ? LOW : HIGH);
+    digitalWriteFast(BR_IN2_PIN, BRSpeed > 0 ? HIGH : LOW);
 
     digitalWriteFast(BL_IN1_PIN, BLSpeed > 0 ? HIGH : LOW);
     digitalWriteFast(BL_IN2_PIN, BLSpeed > 0 ? LOW : HIGH);

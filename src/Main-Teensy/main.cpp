@@ -275,11 +275,133 @@ void loop() {
 #ifdef NORMAL_CODE
 
     if (execution.attackMode == 0) {
-        // if (ballposition.x >= -10){
-        //     if(movement.linetrackController)
-        // } else if (ballposition.x < -10){
+        double lineDepth = processedValues.robot_position.y;
+        if (sensorValues.onLine == 2) {
+            movement.setconstantDirection(Direction::constant{
+                clipAngleto180degrees(180 + sensorValues.angleBisector)});
+            movement.setconstantVelocity(Velocity::constant{600});
+        }
+        else if (processedValues.averageCatchmentValues < CATCHMENT_THRESHOLD) {
+            movement.setconstantVelocity(Velocity::constant{600});
+            movement.setconstantDirection(Direction::constant{processedValues.yellowgoal_relativeposition.angle + processedValues.relativeBearing});
+        }
+        else if(processedValues.ballExists >= 0.5){
 
-        // }
+            if (ballposition.y < 0) {
+
+                if ((processedValues.ball_relativeposition.angle +
+                             processedValues.relativeBearing <
+                         60 &&
+                     processedValues.ball_relativeposition.angle +
+                             processedValues.relativeBearing >
+                         20) ||
+                    (processedValues.ball_relativeposition.angle +
+                             processedValues.relativeBearing >
+                         -60 &&
+                     processedValues.ball_relativeposition.angle +
+                             processedValues.relativeBearing <
+                         -20)) {
+                    if (processedValues.ball_relativeposition.angle +
+                                processedValues.relativeBearing <
+                            60 &&
+                        processedValues.ball_relativeposition.angle +
+                                processedValues.relativeBearing >
+                            20) {
+                        movetoPoint({ballposition.x - 10, ballposition.y - 25},
+                                    700, 300, 0.8);
+                    }
+                    movetoPoint({ballposition.x + 10, ballposition.y - 25}, 600,
+                                300, 0.8);
+                } else {
+                    movement.setconstantVelocity(
+                        Velocity::constant{movement.applySigmoid(
+                            700, 300,
+                            curveAroundBallMultiplier(
+                                processedValues.ball_relativeposition.angle +
+                                    processedValues.relativeBearing,
+                                processedValues.ball_relativeposition.distance,
+                                50),
+                            1.1)});
+                    solenoid.kick = 0;
+                    movement.setconstantDirection(Direction::constant{
+                        ballAngleOffset(
+                            processedValues.ball_relativeposition.distance,
+                            processedValues.ball_relativeposition.angle) +
+                        processedValues.ball_relativeposition.angle});
+                }
+            } else if (ballposition.y >= 0) {
+                
+                if (clipAngleto360degrees(
+                        processedValues.bluegoal_relativeposition.angle) >
+                    clipAngleto360degrees(
+                        processedValues.ball_relativeposition.angle - 180)) {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        -lineDepth, processedValues.relativeBearing - 180, 60,
+                        false});
+                    double progress =
+                        (processedValues.bluegoal_relativeposition.angle -
+                         (processedValues.ball_relativeposition.angle - 180)) /
+                        90;
+                    movement.setconstantVelocity(
+                        Velocity::constant{movement.applySigmoid(
+                            DEFENCE_TRACKBALL_MAX_VELOCITY,
+                            DEFENCE_TRACKBALL_MIN_VELOCITY, progress,
+                            DEFENCE_ACCELERATION_MULTIPLIER)});
+                } else if (clipAngleto360degrees(
+                               processedValues.bluegoal_relativeposition
+                                   .angle) <=
+                           clipAngleto360degrees(
+                               processedValues.ball_relativeposition.angle -
+                               180)) {
+                    movement.setlinetrackDirection(Direction::linetrack{
+                        -lineDepth, processedValues.relativeBearing - 180, 60,
+                        true});
+                    double progress =
+                        (-clipAngleto360degrees(
+                             processedValues.bluegoal_relativeposition.angle) +
+                         clipAngleto360degrees(
+                             processedValues.ball_relativeposition.angle -
+                             180)) /
+                        90;
+                    movement.setconstantVelocity(
+                        Velocity::constant{movement.applySigmoid(
+                            DEFENCE_TRACKBALL_MAX_VELOCITY,
+                            DEFENCE_TRACKBALL_MIN_VELOCITY, progress,
+                            DEFENCE_ACCELERATION_MULTIPLIER)});
+                }
+            }
+        }
+        else{
+            if (processedValues.bluegoal_relativeposition.angle > 0) {
+                movement.setlinetrackDirection(Direction::linetrack{
+                    -lineDepth, processedValues.relativeBearing - 180, 60,
+                    true});
+
+                double progress =
+                    processedValues.bluegoal_relativeposition.angle / 90;
+
+                movement.setconstantVelocity(Velocity::constant{
+                    movement.applySigmoid(DEFENCE_TRACKBALL_MAX_VELOCITY,
+                                          DEFENCE_TRACKBALL_MIN_VELOCITY,
+                                          progress,
+                                          DEFENCE_ACCELERATION_MULTIPLIER)});
+
+            } else {
+                movement.setlinetrackDirection(Direction::linetrack{
+                    -lineDepth, processedValues.relativeBearing - 180, 60,
+                    false});
+                double progress =
+                    -processedValues.bluegoal_relativeposition.angle / 90;
+                movement.setconstantVelocity(Velocity::constant{
+                    movement.applySigmoid(DEFENCE_TRACKBALL_MAX_VELOCITY,
+                                          DEFENCE_TRACKBALL_MIN_VELOCITY,
+                                          progress,
+                                          DEFENCE_ACCELERATION_MULTIPLIER)});
+            }
+        }
+
+
+        movement.setconstantBearing(Bearing::constant{0,processedValues.relativeBearing});
 
     #ifdef DEBUG_DEFENCE_BOT
         const auto printSerial = [](double value) {
@@ -327,7 +449,7 @@ void loop() {
 
     else {
 
-        movement.setBearingSettings(-500, 500, 3, 100, 0);
+        movement.setBearingSettings(-500, 500, 2.5, 100, 0);
         // calculate time without ball
         if (processedValues.averageCatchmentValues > CATCHMENT_THRESHOLD) {
             execution.catchmentTime = millis();
@@ -335,11 +457,11 @@ void loop() {
 
         if (execution.strategy == 2) {
             if (ballposition.x >= 0) {
-                execution.targetBearing = 180;
+                execution.targetBearing = 150;
                 execution.strategy2Quadrant = 1;
                 KICK_POINT = {50, 30};
             } else if (ballposition.x < 0) {
-                execution.targetBearing = 180;
+                execution.targetBearing = -150;
                 execution.strategy2Quadrant = 4;
                 KICK_POINT = {-50, 30};
             }
@@ -391,6 +513,7 @@ void loop() {
             // }
 
             else {
+                execution.dribblerSpeed = 140;
 
                 // if ((processedValues.ball_relativeposition.angle +
                 // processedValues.relativeBearing < 60 &&
@@ -431,6 +554,7 @@ void loop() {
             }
         } else if (processedValues.averageCatchmentValues <=
                    CATCHMENT_THRESHOLD) { // 720
+            execution.dribblerSpeed = 160;
             if (execution.strategy2GotBall == false) {
                 if (processedValues.robot_position.x >= 0) {
                     execution.targetBearing = 180;
@@ -695,9 +819,9 @@ void loop() {
 #ifdef ROBOT2
     execution.dribblerSpeed += 50;
 #endif
-    if (execution.dribblerSpeedAccel < execution.dribblerSpeed - 10) {
+    if (execution.dribblerSpeedAccel < execution.dribblerSpeed - 5) {
         execution.dribblerSpeedAccel += dt_micros * 0.00003;
-    } else if (execution.dribblerSpeedAccel > execution.dribblerSpeed + 10) {
+    } else if (execution.dribblerSpeedAccel > execution.dribblerSpeed + 5) {
         execution.dribblerSpeedAccel -= dt_micros * 0.00003;
     } else {
         execution.dribblerSpeedAccel = execution.dribblerSpeed;

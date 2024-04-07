@@ -174,7 +174,7 @@ void findLine(int dt_micros) {
 double ballAngleOffset(double distance, double direction) {
     // offset multiplier https://www.desmos.com/calculator/8d2ztl2zf8
 
-    if (direction < 50) {
+    if (direction < 60) {
         double constant = 0;
         double angleoffset =
             constrain(direction * SMALL_ANGLE_OFFSET_MULTIPLIER, -90, 90) *

@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define YELLOW_GOAL_ATTACK
+#define BLUE_GOAL_ATTACK
 
 // lidars processing settings
 #define X_AXIS_LIDARS_POSITIONAL_OFFSET                                        \
